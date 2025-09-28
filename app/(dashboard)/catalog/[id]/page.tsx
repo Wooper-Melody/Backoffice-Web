@@ -13,7 +13,7 @@ import Link from "next/link"
 // Mock data - in real app this would come from API based on [id]
 const contentDetail = {
   id: "1",
-  type: "Canción",
+  type: "Song",
   title: "Blinding Lights",
   artist: "The Weeknd",
   collection: "After Hours",
@@ -21,7 +21,7 @@ const contentDetail = {
   position: 2,
   duration: "3:20",
   publishDate: "2019-11-29",
-  status: "Publicado",
+  status: "Published",
   hasVideo: true,
   explicit: false,
   cover: "/placeholder.svg?key=s8s96",
@@ -31,16 +31,16 @@ const contentDetail = {
 }
 
 const availabilityData = [
-  { region: "Global", status: "Publicado", scheduledDate: null },
-  { region: "Estados Unidos", status: "Publicado", scheduledDate: null },
-  { region: "Europa", status: "Publicado", scheduledDate: null },
-  { region: "Asia", status: "No-disponible-región", scheduledDate: null },
-  { region: "América Latina", status: "Programado", scheduledDate: "2024-01-15T10:00:00Z" },
+  { region: "Global", status: "Published", scheduledDate: null },
+  { region: "United States", status: "Published", scheduledDate: null },
+  { region: "Europe", status: "Published", scheduledDate: null },
+  { region: "Asia", status: "Region-unavailable", scheduledDate: null },
+  { region: "Latin America", status: "Scheduled", scheduledDate: "2024-01-15T10:00:00Z" },
 ]
 
 const appearances = [
   {
-    type: "Álbum",
+    type: "Album",
     title: "After Hours",
     position: 2,
     owner: null,
@@ -55,7 +55,7 @@ const appearances = [
     type: "Playlist",
     title: "Synthwave Essentials",
     position: 5,
-    owner: "Usuario: @musiclover",
+    owner: "User: @musiclover",
   },
 ]
 
@@ -64,33 +64,33 @@ const auditLog = [
     id: "1",
     timestamp: "2024-01-10T14:30:00Z",
     user: "admin@melody.com",
-    event: "Cambio de disponibilidad",
-    details: "Región Asia: Publicado → No-disponible-región",
+    event: "Availability change",
+    details: "Region Asia: Published → Region-unavailable",
     scope: "Asia",
   },
   {
     id: "2",
     timestamp: "2024-01-05T09:15:00Z",
     user: "moderator@melody.com",
-    event: "Desbloqueo",
-    details: "Contenido desbloqueado tras revisión",
+    event: "Unblock",
+    details: "Content unblocked after review",
     scope: "Global",
   },
   {
     id: "3",
     timestamp: "2023-12-20T16:45:00Z",
     user: "admin@melody.com",
-    event: "Bloqueo administrativo",
-    details: "Bloqueado por reporte de copyright",
+    event: "Admin block",
+    details: "Blocked due to copyright report",
     scope: "Global",
   },
 ]
 
 const statusColors = {
-  Publicado: "bg-green-500/10 text-green-500 border-green-500/20",
-  Programado: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-  "No-disponible-región": "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
-  "Bloqueado-admin": "bg-red-500/10 text-red-500 border-red-500/20",
+  Published: "bg-green-500/10 text-green-500 border-green-500/20",
+  Scheduled: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+  "Region-unavailable": "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
+  "Admin-blocked": "bg-red-500/10 text-red-500 border-red-500/20",
 }
 
 export default function ContentDetailPage({ params }: { params: { id: string } }) {
@@ -103,7 +103,7 @@ export default function ContentDetailPage({ params }: { params: { id: string } }
         <Link href="/catalog">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver al catálogo
+            Back to catalog
           </Button>
         </Link>
       </div>
@@ -137,15 +137,15 @@ export default function ContentDetailPage({ params }: { params: { id: string } }
           <div className="flex items-center space-x-4">
             <Button>
               <Play className="h-4 w-4 mr-2" />
-              Reproducir
+              Play
             </Button>
             <Button variant="outline">
               <Edit className="h-4 w-4 mr-2" />
-              Editar metadatos
+              Edit Metadata
             </Button>
             <Button variant="outline">
               <Shield className="h-4 w-4 mr-2" />
-              Gestionar disponibilidad
+              Manage Availability
             </Button>
           </div>
         </div>
@@ -154,37 +154,37 @@ export default function ContentDetailPage({ params }: { params: { id: string } }
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="summary">Resumen</TabsTrigger>
-          <TabsTrigger value="availability">Disponibilidad</TabsTrigger>
-          <TabsTrigger value="appearances">Apariciones</TabsTrigger>
-          <TabsTrigger value="audit">Auditoría</TabsTrigger>
+          <TabsTrigger value="summary">Summary</TabsTrigger>
+          <TabsTrigger value="availability">Availability</TabsTrigger>
+          <TabsTrigger value="appearances">Appearances</TabsTrigger>
+          <TabsTrigger value="audit">Audit</TabsTrigger>
         </TabsList>
 
         <TabsContent value="summary" className="space-y-6">
           <div className="grid gap-6 md:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Información básica</CardTitle>
+                <CardTitle>Basic Info</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Duración:</span>
+                    <span className="text-muted-foreground">Duration:</span>
                   <span>{contentDetail.duration}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Posición en colección:</span>
+                    <span className="text-muted-foreground">Position in collection:</span>
                   <span>#{contentDetail.position}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Fecha de publicación:</span>
+                    <span className="text-muted-foreground">Publish Date:</span>
                   <span>{contentDetail.publishDate}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">ISRC:</span>
+                    <span className="text-muted-foreground">ISRC:</span>
                   <span className="font-mono text-sm">{contentDetail.isrc}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Sello discográfico:</span>
+                    <span className="text-muted-foreground">Label:</span>
                   <span>{contentDetail.label}</span>
                 </div>
               </CardContent>
@@ -192,11 +192,11 @@ export default function ContentDetailPage({ params }: { params: { id: string } }
 
             <Card>
               <CardHeader>
-                <CardTitle>Géneros y clasificación</CardTitle>
+                <CardTitle>Genres & Classification</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div>
-                  <span className="text-muted-foreground mb-2 block">Géneros:</span>
+                    <span className="text-muted-foreground mb-2 block">Genres:</span>
                   <div className="flex flex-wrap gap-2">
                     {contentDetail.genres.map((genre) => (
                       <Badge key={genre} variant="secondary">
@@ -206,12 +206,12 @@ export default function ContentDetailPage({ params }: { params: { id: string } }
                   </div>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Contenido explícito:</span>
-                  <span>{contentDetail.explicit ? "Sí" : "No"}</span>
+                    <span className="text-muted-foreground">Explicit content:</span>
+                    <span>{contentDetail.explicit ? "Yes" : "No"}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Video musical:</span>
-                  <span>{contentDetail.hasVideo ? "Disponible" : "No disponible"}</span>
+                    <span className="text-muted-foreground">Music video:</span>
+                    <span>{contentDetail.hasVideo ? "Available" : "Not available"}</span>
                 </div>
               </CardContent>
             </Card>
@@ -220,19 +220,19 @@ export default function ContentDetailPage({ params }: { params: { id: string } }
           {contentDetail.collection && (
             <Card>
               <CardHeader>
-                <CardTitle>Colección asociada</CardTitle>
+                <CardTitle>Associated Collection</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-medium">{contentDetail.collection}</p>
                     <p className="text-sm text-muted-foreground">
-                      Álbum • {contentDetail.collectionYear} • Posición #{contentDetail.position}
+                          Album • {contentDetail.collectionYear} • Position #{contentDetail.position}
                     </p>
                   </div>
                   <Button variant="outline" size="sm">
                     <ExternalLink className="h-4 w-4 mr-2" />
-                    Ver colección
+                        View Collection
                   </Button>
                 </div>
               </CardContent>
@@ -243,17 +243,17 @@ export default function ContentDetailPage({ params }: { params: { id: string } }
         <TabsContent value="availability" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Estado efectivo por región</CardTitle>
-              <CardDescription>Disponibilidad actual aplicando la prioridad de estados</CardDescription>
+              <CardTitle>Effective status by region</CardTitle>
+                <CardDescription>Current availability applying state priority</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Región</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead>Fecha programada</TableHead>
-                    <TableHead>Acciones</TableHead>
+                        <TableHead>Region</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Scheduled Date</TableHead>
+                        <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -278,7 +278,7 @@ export default function ContentDetailPage({ params }: { params: { id: string } }
                       <TableCell>
                         <Button variant="ghost" size="sm">
                           <Edit className="h-4 w-4 mr-2" />
-                          Editar
+                              Edit
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -292,18 +292,18 @@ export default function ContentDetailPage({ params }: { params: { id: string } }
         <TabsContent value="appearances" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Apariciones en colecciones</CardTitle>
-              <CardDescription>Álbumes, EPs, Singles y Playlists públicas que incluyen esta canción</CardDescription>
+              <CardTitle>Appearances in collections</CardTitle>
+                <CardDescription>Albums, EPs, Singles and public playlists that include this song</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Título</TableHead>
-                    <TableHead>Posición</TableHead>
-                    <TableHead>Owner</TableHead>
-                    <TableHead>Acciones</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Title</TableHead>
+                        <TableHead>Position</TableHead>
+                        <TableHead>Owner</TableHead>
+                        <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -318,7 +318,7 @@ export default function ContentDetailPage({ params }: { params: { id: string } }
                       <TableCell>
                         <Button variant="ghost" size="sm">
                           <Eye className="h-4 w-4 mr-2" />
-                          Ver detalle
+                          View details
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -332,34 +332,34 @@ export default function ContentDetailPage({ params }: { params: { id: string } }
         <TabsContent value="audit" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Historial de auditoría</CardTitle>
-              <CardDescription>
-                Registro de cambios de bloqueo administrativo y disponibilidad por región
-              </CardDescription>
+              <CardTitle>Audit History</CardTitle>
+                <CardDescription>
+                  Record of admin block changes and availability by region
+                </CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Fecha y hora</TableHead>
-                    <TableHead>Usuario</TableHead>
-                    <TableHead>Evento</TableHead>
-                    <TableHead>Detalles</TableHead>
-                    <TableHead>Alcance</TableHead>
+                        <TableHead>Date & Time</TableHead>
+                        <TableHead>User</TableHead>
+                        <TableHead>Event</TableHead>
+                        <TableHead>Details</TableHead>
+                        <TableHead>Scope</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {auditLog.map((log) => (
                     <TableRow key={log.id}>
-                      <TableCell>{new Date(log.timestamp).toLocaleString()}</TableCell>
-                      <TableCell className="font-medium">{log.user}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{log.event}</Badge>
-                      </TableCell>
-                      <TableCell>{log.details}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{log.scope}</Badge>
-                      </TableCell>
+                        <TableCell>{new Date(log.timestamp).toLocaleString()}</TableCell>
+                        <TableCell className="font-medium">{log.user}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{log.event}</Badge>
+                        </TableCell>
+                        <TableCell>{log.details}</TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">{log.scope}</Badge>
+                        </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

@@ -10,15 +10,6 @@ import { Music, BarChart3, Settings, Eye, Shield, ChevronLeft, ChevronRight, Use
 
 const navigation = [
   {
-    name: "Catalog",
-    href: "/catalog",
-    icon: Music,
-    children: [
-      { name: "Browse Content", href: "/catalog" },
-      { name: "State Management", href: "/catalog/states" },
-    ],
-  },
-  {
     name: "Metrics",
     href: "/metrics",
     icon: BarChart3,
@@ -40,6 +31,15 @@ const navigation = [
     ],
   },
   {
+    name: "Catalog",
+    href: "/catalog",
+    icon: Music,
+    children: [
+      { name: "Browse Content", href: "/catalog" },
+      { name: "State Management", href: "/catalog/states" },
+    ],
+  },
+  {
     name: "Users",
     href: "/users",
     icon: Users,
@@ -48,12 +48,7 @@ const navigation = [
     name: "Audit",
     href: "/audit",
     icon: Eye,
-  },
-  {
-    name: "Settings",
-    href: "/settings",
-    icon: Settings,
-  },
+  }
 ]
 
 interface SidebarProps {

@@ -61,10 +61,10 @@ const topArtists = [
 ]
 
 const artistGrowthData = [
-  { month: "Ene", listeners: 78000000 },
+  { month: "Jan", listeners: 78000000 },
   { month: "Feb", listeners: 81000000 },
   { month: "Mar", listeners: 83000000 },
-  { month: "Abr", listeners: 85000000 },
+  { month: "Apr", listeners: 85000000 },
 ]
 
 const topMarkets = [
@@ -94,8 +94,8 @@ export default function ArtistMetricsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Métricas de Artistas</h1>
-          <p className="text-muted-foreground">Análisis detallado del rendimiento de artistas</p>
+            <h1 className="text-3xl font-bold tracking-tight">Artist Metrics</h1>
+            <p className="text-muted-foreground">Detailed performance analysis for artists</p>
         </div>
         <div className="flex items-center space-x-4">
           <Select value={timeRange} onValueChange={setTimeRange}>
@@ -103,15 +103,15 @@ export default function ArtistMetricsPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="7d">Últimos 7 días</SelectItem>
-              <SelectItem value="30d">Últimos 30 días</SelectItem>
-              <SelectItem value="90d">Últimos 90 días</SelectItem>
-              <SelectItem value="1y">Último año</SelectItem>
+              <SelectItem value="7d">Last 7 days</SelectItem>
+              <SelectItem value="30d">Last 30 days</SelectItem>
+              <SelectItem value="90d">Last 90 days</SelectItem>
+              <SelectItem value="1y">Last year</SelectItem>
             </SelectContent>
           </Select>
           <Button variant="outline">
             <Download className="h-4 w-4 mr-2" />
-            Exportar
+            Export
           </Button>
         </div>
       </div>
@@ -119,14 +119,14 @@ export default function ArtistMetricsPage() {
       {/* Artist Search */}
       <Card>
         <CardHeader>
-          <CardTitle>Buscar artista</CardTitle>
+          <CardTitle>Search artist</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center space-x-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Buscar por nombre de artista..."
+                placeholder="Search by artist name..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -158,16 +158,16 @@ export default function ArtistMetricsPage() {
             </Avatar>
             <div>
               <h2 className="text-xl font-bold">{currentArtist.name}</h2>
-              <p className="text-muted-foreground">Panel de métricas</p>
+              <p className="text-muted-foreground">Metrics panel</p>
             </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
             <div className="text-center p-4 border rounded-lg">
-              <div className="flex items-center justify-center space-x-1 mb-2">
+                <div className="flex items-center justify-center space-x-1 mb-2">
                 <Users className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">Oyentes mensuales</span>
+                <span className="text-sm font-medium">Monthly listeners</span>
               </div>
               <div className="text-2xl font-bold">{(currentArtist.monthlyListeners / 1000000).toFixed(1)}M</div>
               <div className="flex items-center justify-center space-x-1 text-xs">
@@ -177,33 +177,33 @@ export default function ArtistMetricsPage() {
             </div>
 
             <div className="text-center p-4 border rounded-lg">
-              <div className="flex items-center justify-center space-x-1 mb-2">
+                <div className="flex items-center justify-center space-x-1 mb-2">
                 <Heart className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">Seguidores</span>
+                <span className="text-sm font-medium">Followers</span>
               </div>
               <div className="text-2xl font-bold">{(currentArtist.followers / 1000000).toFixed(1)}M</div>
             </div>
 
             <div className="text-center p-4 border rounded-lg">
-              <div className="flex items-center justify-center space-x-1 mb-2">
+                <div className="flex items-center justify-center space-x-1 mb-2">
                 <Play className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">Reproducciones</span>
+                <span className="text-sm font-medium">Plays</span>
               </div>
               <div className="text-2xl font-bold">{(currentArtist.plays / 1000000).toFixed(0)}M</div>
             </div>
 
             <div className="text-center p-4 border rounded-lg">
-              <div className="flex items-center justify-center space-x-1 mb-2">
+                <div className="flex items-center justify-center space-x-1 mb-2">
                 <Heart className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">Me gusta</span>
+                <span className="text-sm font-medium">Likes</span>
               </div>
               <div className="text-2xl font-bold">{(currentArtist.likes / 1000000).toFixed(1)}M</div>
             </div>
 
             <div className="text-center p-4 border rounded-lg">
-              <div className="flex items-center justify-center space-x-1 mb-2">
+                <div className="flex items-center justify-center space-x-1 mb-2">
                 <Share className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">Compartidos</span>
+                <span className="text-sm font-medium">Shares</span>
               </div>
               <div className="text-2xl font-bold">{(currentArtist.shares / 1000000).toFixed(1)}M</div>
             </div>
@@ -215,8 +215,8 @@ export default function ArtistMetricsPage() {
         {/* Growth Trend */}
         <Card>
           <CardHeader>
-            <CardTitle>Crecimiento de oyentes</CardTitle>
-            <CardDescription>Evolución mensual de oyentes únicos</CardDescription>
+            <CardTitle>Listener Growth</CardTitle>
+            <CardDescription>Monthly evolution of unique listeners</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -224,7 +224,7 @@ export default function ArtistMetricsPage() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis />
-                <Tooltip formatter={(value) => [`${((value as number) / 1000000).toFixed(1)}M`, "Oyentes"]} />
+            <Tooltip formatter={(value) => [`${((value as number) / 1000000).toFixed(1)}M`, "Listeners"]} />
                 <Bar dataKey="listeners" fill="#8884d8" />
               </BarChart>
             </ResponsiveContainer>
@@ -234,8 +234,8 @@ export default function ArtistMetricsPage() {
         {/* Top Markets */}
         <Card>
           <CardHeader>
-            <CardTitle>Principales mercados</CardTitle>
-            <CardDescription>Países con mayor número de oyentes</CardDescription>
+            <CardTitle>Top Markets</CardTitle>
+            <CardDescription>Countries with the most listeners</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -261,8 +261,8 @@ export default function ArtistMetricsPage() {
       {/* Top Songs */}
       <Card>
         <CardHeader>
-          <CardTitle>Canciones más populares</CardTitle>
-          <CardDescription>Top canciones del artista por reproducciones</CardDescription>
+          <CardTitle>Top Songs</CardTitle>
+          <CardDescription>Artist's top songs by plays</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">

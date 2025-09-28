@@ -8,10 +8,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import Link from "next/link"
 
 const availabilityStats = [
-  { label: "Políticas activas", value: 1247, change: "+23", color: "blue" },
-  { label: "Contenido programado", value: 156, change: "+12", color: "yellow" },
-  { label: "Bloqueos activos", value: 47, change: "-3", color: "red" },
-  { label: "Regiones configuradas", value: 12, change: "0", color: "green" },
+  { label: "Active Policies", value: 1247, change: "+23", color: "blue" },
+  { label: "Scheduled Content", value: 156, change: "+12", color: "yellow" },
+  { label: "Active Blocks", value: 47, change: "-3", color: "red" },
+  { label: "Configured Regions", value: 12, change: "0", color: "green" },
 ]
 
 export default function AvailabilityPage() {
@@ -20,8 +20,8 @@ export default function AvailabilityPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Disponibilidad</h1>
-          <p className="text-muted-foreground">Gestiona la disponibilidad territorial y temporal del contenido</p>
+          <h1 className="text-3xl font-bold tracking-tight">Availability</h1>
+          <p className="text-muted-foreground">Manage territorial and temporal content availability</p>
         </div>
       </div>
 
@@ -34,7 +34,7 @@ export default function AvailabilityPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stat.value.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">{stat.change} desde el mes pasado</p>
+              <p className="text-xs text-muted-foreground">{stat.change} from last month</p>
             </CardContent>
           </Card>
         ))}
@@ -43,9 +43,9 @@ export default function AvailabilityPage() {
       {/* Tabs */}
       <Tabs defaultValue="regions" className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="regions">Configuración Regional</TabsTrigger>
-          <TabsTrigger value="scheduling">Ventanas de Tiempo</TabsTrigger>
-          <TabsTrigger value="blocks">Bloqueos</TabsTrigger>
+          <TabsTrigger value="regions">Regional Configuration</TabsTrigger>
+          <TabsTrigger value="scheduling">Time Windows</TabsTrigger>
+          <TabsTrigger value="blocks">Blocks</TabsTrigger>
         </TabsList>
 
         <TabsContent value="regions">
@@ -54,14 +54,14 @@ export default function AvailabilityPage() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>Regiones configuradas</CardTitle>
+                    <CardTitle>Configured Regions</CardTitle>
                     <CardDescription>
-                      Gestiona las regiones disponibles para configurar políticas de contenido
+                      Manage available regions to configure content policies
                     </CardDescription>
                   </div>
                   <Button>
                     <Plus className="h-4 w-4 mr-2" />
-                    Nueva región
+                    New Region
                   </Button>
                 </div>
               </CardHeader>
@@ -78,13 +78,13 @@ export default function AvailabilityPage() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>Contenido programado</CardTitle>
-                    <CardDescription>Contenido con fechas de publicación programadas</CardDescription>
+                    <CardTitle>Scheduled Content</CardTitle>
+                    <CardDescription>Content with scheduled publication dates</CardDescription>
                   </div>
                   <Link href="/availability/scheduling/new">
                     <Button>
                       <Plus className="h-4 w-4 mr-2" />
-                      Programar contenido
+                      Schedule Content
                     </Button>
                   </Link>
                 </div>
@@ -102,8 +102,8 @@ export default function AvailabilityPage() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>Contenido bloqueado</CardTitle>
-                    <CardDescription>Contenido bloqueado administrativamente</CardDescription>
+                    <CardTitle>Blocked Content</CardTitle>
+                    <CardDescription>Administratively blocked content</CardDescription>
                   </div>
                 </div>
               </CardHeader>
@@ -120,22 +120,22 @@ export default function AvailabilityPage() {
 
 function RegionsTable() {
   const regions = [
-    { id: "1", name: "Global", code: "GLOBAL", countries: 195, status: "Activa" },
-    { id: "2", name: "Estados Unidos", code: "US", countries: 1, status: "Activa" },
-    { id: "3", name: "Europa", code: "EU", countries: 27, status: "Activa" },
-    { id: "4", name: "Asia", code: "ASIA", countries: 48, status: "Activa" },
-    { id: "5", name: "América Latina", code: "LATAM", countries: 20, status: "Activa" },
+    { id: "1", name: "Global", code: "GLOBAL", countries: 195, status: "Active" },
+    { id: "2", name: "United States", code: "US", countries: 1, status: "Active" },
+    { id: "3", name: "Europe", code: "EU", countries: 27, status: "Active" },
+    { id: "4", name: "Asia", code: "ASIA", countries: 48, status: "Active" },
+    { id: "5", name: "Latin America", code: "LATAM", countries: 20, status: "Active" },
   ]
 
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Nombre</TableHead>
-          <TableHead>Código</TableHead>
-          <TableHead>Países incluidos</TableHead>
-          <TableHead>Estado</TableHead>
-          <TableHead className="text-right">Acciones</TableHead>
+          <TableHead>Name</TableHead>
+          <TableHead>Code</TableHead>
+          <TableHead>Included Countries</TableHead>
+          <TableHead>Status</TableHead>
+          <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -145,7 +145,7 @@ function RegionsTable() {
             <TableCell>
               <Badge variant="outline">{region.code}</Badge>
             </TableCell>
-            <TableCell>{region.countries} países</TableCell>
+            <TableCell>{region.countries} countries</TableCell>
             <TableCell>
               <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">
                 {region.status}
@@ -176,19 +176,19 @@ function ScheduledContentTable() {
       id: "1",
       title: "New Album Release",
       artist: "Artist Name",
-      type: "Colección",
+      type: "Collection",
       scheduledDate: "2024-01-15T10:00:00Z",
       regions: ["Global"],
-      status: "Programado",
+      status: "Scheduled",
     },
     {
       id: "2",
       title: "Single Preview",
       artist: "Another Artist",
-      type: "Canción",
+      type: "Song",
       scheduledDate: "2024-01-20T15:30:00Z",
       regions: ["US", "EU"],
-      status: "Programado",
+      status: "Scheduled",
     },
   ]
 
@@ -196,13 +196,13 @@ function ScheduledContentTable() {
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Contenido</TableHead>
-          <TableHead>Artista</TableHead>
-          <TableHead>Tipo</TableHead>
-          <TableHead>Fecha programada</TableHead>
-          <TableHead>Regiones</TableHead>
-          <TableHead>Estado</TableHead>
-          <TableHead className="text-right">Acciones</TableHead>
+          <TableHead>Content</TableHead>
+          <TableHead>Artist</TableHead>
+          <TableHead>Type</TableHead>
+          <TableHead>Scheduled Date</TableHead>
+          <TableHead>Regions</TableHead>
+          <TableHead>Status</TableHead>
+          <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -256,9 +256,9 @@ function BlockedContentTable() {
       id: "1",
       title: "Blocked Song",
       artist: "Artist Name",
-      type: "Canción",
+      type: "Song",
       blockedDate: "2024-01-10T14:30:00Z",
-      reason: "Violación de derechos de autor",
+      reason: "Copyright violation",
       scope: "Global",
       blockedBy: "admin@melody.com",
     },
@@ -266,9 +266,9 @@ function BlockedContentTable() {
       id: "2",
       title: "Regional Block",
       artist: "Another Artist",
-      type: "Canción",
+      type: "Song",
       blockedDate: "2024-01-08T09:15:00Z",
-      reason: "Solicitud legal",
+      reason: "Legal request",
       scope: "EU",
       blockedBy: "moderator@melody.com",
     },
@@ -278,14 +278,14 @@ function BlockedContentTable() {
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Contenido</TableHead>
-          <TableHead>Artista</TableHead>
-          <TableHead>Tipo</TableHead>
-          <TableHead>Fecha de bloqueo</TableHead>
-          <TableHead>Motivo</TableHead>
-          <TableHead>Alcance</TableHead>
-          <TableHead>Bloqueado por</TableHead>
-          <TableHead className="text-right">Acciones</TableHead>
+          <TableHead>Content</TableHead>
+          <TableHead>Artist</TableHead>
+          <TableHead>Type</TableHead>
+          <TableHead>Block Date</TableHead>
+          <TableHead>Reason</TableHead>
+          <TableHead>Scope</TableHead>
+          <TableHead>Blocked By</TableHead>
+          <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -305,7 +305,7 @@ function BlockedContentTable() {
             <TableCell className="text-right">
               <Button variant="outline" size="sm">
                 <Shield className="h-4 w-4 mr-2" />
-                Desbloquear
+                Unblock
               </Button>
             </TableCell>
           </TableRow>

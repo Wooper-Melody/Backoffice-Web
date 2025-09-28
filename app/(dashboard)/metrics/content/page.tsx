@@ -9,21 +9,21 @@ import { Music, Album, Play, Heart, TrendingUp, TrendingDown, Download } from "l
 
 const contentStats = [
   {
-    label: "Total canciones",
+    label: "Total songs",
     value: "12.8K",
     change: "+180",
     trend: "up",
     icon: Music,
   },
   {
-    label: "Total álbumes",
+    label: "Total albums",
     value: "2.3K",
     change: "+25",
     trend: "up",
     icon: Album,
   },
   {
-    label: "Reproducciones promedio",
+    label: "Average plays",
     value: "847K",
     change: "+5.3%",
     trend: "up",
@@ -39,10 +39,10 @@ const contentStats = [
 ]
 
 const performanceData = [
-  { month: "Ene", songs: 780000, albums: 120000 },
+  { month: "Jan", songs: 780000, albums: 120000 },
   { month: "Feb", songs: 820000, albums: 135000 },
   { month: "Mar", songs: 847000, albums: 142000 },
-  { month: "Abr", songs: 890000, albums: 158000 },
+  { month: "Apr", songs: 890000, albums: 158000 },
 ]
 
 const topSongs = [
@@ -114,8 +114,8 @@ export default function ContentMetricsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Métricas de Contenido</h1>
-          <p className="text-muted-foreground">Análisis del rendimiento de canciones y álbumes</p>
+          <h1 className="text-3xl font-bold tracking-tight">Content Metrics</h1>
+            <p className="text-muted-foreground">Performance analysis of songs and albums</p>
         </div>
         <div className="flex items-center space-x-4">
           <Select value={contentType} onValueChange={setContentType}>
@@ -123,9 +123,9 @@ export default function ContentMetricsPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todo el contenido</SelectItem>
-              <SelectItem value="songs">Solo canciones</SelectItem>
-              <SelectItem value="albums">Solo álbumes</SelectItem>
+              <SelectItem value="all">All content</SelectItem>
+              <SelectItem value="songs">Songs only</SelectItem>
+              <SelectItem value="albums">Albums only</SelectItem>
             </SelectContent>
           </Select>
           <Select value={timeRange} onValueChange={setTimeRange}>
@@ -133,15 +133,15 @@ export default function ContentMetricsPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="7d">Últimos 7 días</SelectItem>
-              <SelectItem value="30d">Últimos 30 días</SelectItem>
-              <SelectItem value="90d">Últimos 90 días</SelectItem>
-              <SelectItem value="1y">Último año</SelectItem>
+              <SelectItem value="7d">Last 7 days</SelectItem>
+              <SelectItem value="30d">Last 30 days</SelectItem>
+              <SelectItem value="90d">Last 90 days</SelectItem>
+              <SelectItem value="1y">Last year</SelectItem>
             </SelectContent>
           </Select>
           <Button variant="outline">
             <Download className="h-4 w-4 mr-2" />
-            Exportar
+            Export
           </Button>
         </div>
       </div>
@@ -163,7 +163,7 @@ export default function ContentMetricsPage() {
                   <TrendingDown className="h-3 w-3 text-red-500" />
                 )}
                 <span className={stat.trend === "up" ? "text-green-500" : "text-red-500"}>{stat.change}</span>
-                <span className="text-muted-foreground">vs período anterior</span>
+                <span className="text-muted-foreground">vs previous period</span>
               </div>
             </CardContent>
           </Card>
@@ -173,8 +173,8 @@ export default function ContentMetricsPage() {
       {/* Performance Trends */}
       <Card>
         <CardHeader>
-          <CardTitle>Tendencias de rendimiento</CardTitle>
-          <CardDescription>Reproducciones promedio por tipo de contenido</CardDescription>
+          <CardTitle>Performance Trends</CardTitle>
+          <CardDescription>Average plays by content type</CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
@@ -185,7 +185,7 @@ export default function ContentMetricsPage() {
               <Tooltip
                 formatter={(value, name) => [
                   `${((value as number) / 1000).toFixed(0)}K`,
-                  name === "songs" ? "Canciones" : "Álbumes",
+                  name === "songs" ? "Songs" : "Albums",
                 ]}
               />
               <Line type="monotone" dataKey="songs" stroke="#8884d8" strokeWidth={2} name="songs" />
@@ -199,8 +199,8 @@ export default function ContentMetricsPage() {
         {/* Top Songs */}
         <Card>
           <CardHeader>
-            <CardTitle>Canciones más populares</CardTitle>
-            <CardDescription>Top canciones por reproducciones en el período</CardDescription>
+            <CardTitle>Top Songs</CardTitle>
+            <CardDescription>Top songs by plays in the period</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -236,8 +236,8 @@ export default function ContentMetricsPage() {
         {/* Top Albums */}
         <Card>
           <CardHeader>
-            <CardTitle>Álbumes más populares</CardTitle>
-            <CardDescription>Top álbumes por reproducciones totales</CardDescription>
+            <CardTitle>Top Albums</CardTitle>
+            <CardDescription>Top albums by total plays</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -250,7 +250,7 @@ export default function ContentMetricsPage() {
                     <div>
                       <h4 className="font-medium">{album.title}</h4>
                       <p className="text-sm text-muted-foreground">
-                        {album.artist} • {album.tracks} canciones
+                        {album.artist} • {album.tracks} tracks
                       </p>
                     </div>
                   </div>
@@ -274,22 +274,22 @@ export default function ContentMetricsPage() {
       {/* Content Performance Analysis */}
       <Card>
         <CardHeader>
-          <CardTitle>Análisis de rendimiento</CardTitle>
-          <CardDescription>Métricas detalladas de engagement y popularidad</CardDescription>
+          <CardTitle>Performance Analysis</CardTitle>
+          <CardDescription>Detailed metrics of engagement and popularity</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-3">
             <div className="text-center p-4 border rounded-lg">
               <div className="text-2xl font-bold text-blue-500">3.2M</div>
-              <p className="text-sm text-muted-foreground">Reproducciones promedio por canción</p>
+              <p className="text-sm text-muted-foreground">Average plays per song</p>
             </div>
             <div className="text-center p-4 border rounded-lg">
               <div className="text-2xl font-bold text-green-500">8.7%</div>
-              <p className="text-sm text-muted-foreground">Tasa de "me gusta"</p>
+              <p className="text-sm text-muted-foreground">Like rate</p>
             </div>
             <div className="text-center p-4 border rounded-lg">
               <div className="text-2xl font-bold text-purple-500">2.1%</div>
-              <p className="text-sm text-muted-foreground">Tasa de compartidos</p>
+              <p className="text-sm text-muted-foreground">Share rate</p>
             </div>
           </div>
         </CardContent>

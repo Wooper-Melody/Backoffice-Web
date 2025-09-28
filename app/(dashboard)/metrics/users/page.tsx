@@ -23,28 +23,28 @@ import { Users, UserPlus, UserCheck, Clock, Download, TrendingUp, TrendingDown }
 
 const userStats = [
   {
-    label: "Usuarios totales",
+    label: "Total users",
     value: "2.4M",
     change: "+12.5%",
     trend: "up",
     icon: Users,
   },
   {
-    label: "Nuevos registros (mes)",
+    label: "New signups (month)",
     value: "45.2K",
     change: "+8.7%",
     trend: "up",
     icon: UserPlus,
   },
   {
-    label: "Usuarios activos diarios",
+    label: "Daily active users",
     value: "847K",
     change: "+5.3%",
     trend: "up",
     icon: UserCheck,
   },
   {
-    label: "Tiempo promedio sesión",
+    label: "Avg session time",
     value: "45min",
     change: "-2.1%",
     trend: "down",
@@ -63,12 +63,12 @@ const dailyActiveUsers = [
 ]
 
 const retentionData = [
-  { day: "Día 1", retention: 100 },
-  { day: "Día 7", retention: 65 },
-  { day: "Día 14", retention: 45 },
-  { day: "Día 30", retention: 32 },
-  { day: "Día 60", retention: 28 },
-  { day: "Día 90", retention: 25 },
+  { day: "Day 1", retention: 100 },
+  { day: "Day 7", retention: 65 },
+  { day: "Day 14", retention: 45 },
+  { day: "Day 30", retention: 32 },
+  { day: "Day 60", retention: 28 },
+  { day: "Day 90", retention: 25 },
 ]
 
 const demographicsData = [
@@ -80,10 +80,10 @@ const demographicsData = [
 ]
 
 const topCountries = [
-  { country: "Estados Unidos", users: 680000, percentage: 28.3 },
-  { country: "Brasil", users: 456000, percentage: 19.0 },
-  { country: "México", users: 312000, percentage: 13.0 },
-  { country: "España", users: 240000, percentage: 10.0 },
+  { country: "United States", users: 680000, percentage: 28.3 },
+  { country: "Brazil", users: 456000, percentage: 19.0 },
+  { country: "Mexico", users: 312000, percentage: 13.0 },
+  { country: "Spain", users: 240000, percentage: 10.0 },
   { country: "Argentina", users: 192000, percentage: 8.0 },
 ]
 
@@ -95,8 +95,8 @@ export default function UserMetricsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Métricas de Usuarios</h1>
-          <p className="text-muted-foreground">Análisis detallado del comportamiento y crecimiento de usuarios</p>
+          <h1 className="text-3xl font-bold tracking-tight">User Metrics</h1>
+          <p className="text-muted-foreground">Detailed analysis of user behavior and growth</p>
         </div>
         <div className="flex items-center space-x-4">
           <Select value={timeRange} onValueChange={setTimeRange}>
@@ -104,15 +104,15 @@ export default function UserMetricsPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="7d">Últimos 7 días</SelectItem>
-              <SelectItem value="30d">Últimos 30 días</SelectItem>
-              <SelectItem value="90d">Últimos 90 días</SelectItem>
-              <SelectItem value="1y">Último año</SelectItem>
+              <SelectItem value="7d">Last 7 days</SelectItem>
+              <SelectItem value="30d">Last 30 days</SelectItem>
+              <SelectItem value="90d">Last 90 days</SelectItem>
+              <SelectItem value="1y">Last year</SelectItem>
             </SelectContent>
           </Select>
           <Button variant="outline">
             <Download className="h-4 w-4 mr-2" />
-            Exportar CSV
+            Export CSV
           </Button>
         </div>
       </div>
@@ -134,7 +134,7 @@ export default function UserMetricsPage() {
                   <TrendingDown className="h-3 w-3 text-red-500" />
                 )}
                 <span className={stat.trend === "up" ? "text-green-500" : "text-red-500"}>{stat.change}</span>
-                <span className="text-muted-foreground">vs período anterior</span>
+                <span className="text-muted-foreground">vs previous period</span>
               </div>
             </CardContent>
           </Card>
@@ -145,8 +145,8 @@ export default function UserMetricsPage() {
         {/* Daily Active Users */}
         <Card>
           <CardHeader>
-            <CardTitle>Usuarios activos diarios</CardTitle>
-            <CardDescription>Evolución de usuarios activos en los últimos 7 días</CardDescription>
+            <CardTitle>Daily Active Users</CardTitle>
+            <CardDescription>Daily active users evolution in the last 7 days</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -155,7 +155,7 @@ export default function UserMetricsPage() {
                 <XAxis dataKey="date" />
                 <YAxis />
                 <Tooltip
-                  formatter={(value) => [`${((value as number) / 1000).toFixed(0)}K usuarios`, "Usuarios activos"]}
+                  formatter={(value) => [`${((value as number) / 1000).toFixed(0)}K users`, "Active users"]}
                 />
                 <Line type="monotone" dataKey="users" stroke="#8884d8" strokeWidth={2} />
               </LineChart>
@@ -166,8 +166,8 @@ export default function UserMetricsPage() {
         {/* Demographics */}
         <Card>
           <CardHeader>
-            <CardTitle>Demografía por edad</CardTitle>
-            <CardDescription>Distribución de usuarios por rango de edad</CardDescription>
+            <CardTitle>Age Demographics</CardTitle>
+            <CardDescription>User distribution by age range</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -177,7 +177,10 @@ export default function UserMetricsPage() {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ age, percent }) => `${age} ${(percent * 100).toFixed(0)}%`}
+                  label={(props: any) => {
+                    const { age, percent } = props as any
+                    return `${age} ${(percent * 100).toFixed(0)}%`
+                  }}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
@@ -196,8 +199,8 @@ export default function UserMetricsPage() {
       {/* Retention Analysis */}
       <Card>
         <CardHeader>
-          <CardTitle>Análisis de retención</CardTitle>
-          <CardDescription>Porcentaje de usuarios que regresan después del registro</CardDescription>
+          <CardTitle>Retention Analysis</CardTitle>
+          <CardDescription>Percentage of users returning after signup</CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
@@ -205,7 +208,7 @@ export default function UserMetricsPage() {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="day" />
               <YAxis />
-              <Tooltip formatter={(value) => [`${value}%`, "Retención"]} />
+              <Tooltip formatter={(value) => [`${value}%`, "Retention"]} />
               <Bar dataKey="retention" fill="#8884d8" />
             </BarChart>
           </ResponsiveContainer>
@@ -214,10 +217,10 @@ export default function UserMetricsPage() {
 
       {/* Top Countries */}
       <Card>
-        <CardHeader>
-          <CardTitle>Principales mercados</CardTitle>
-          <CardDescription>Países con mayor número de usuarios activos</CardDescription>
-        </CardHeader>
+          <CardHeader>
+            <CardTitle>Top Markets</CardTitle>
+            <CardDescription>Countries with the highest number of active users</CardDescription>
+          </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {topCountries.map((country, index) => (
@@ -228,7 +231,7 @@ export default function UserMetricsPage() {
                   </div>
                   <div>
                     <h4 className="font-medium">{country.country}</h4>
-                    <p className="text-sm text-muted-foreground">{country.users.toLocaleString()} usuarios</p>
+                    <p className="text-sm text-muted-foreground">{country.users.toLocaleString()} users</p>
                   </div>
                 </div>
                 <div className="text-right">
@@ -244,36 +247,36 @@ export default function UserMetricsPage() {
       <div className="grid gap-6 md:grid-cols-3">
         <Card>
           <CardHeader>
-            <CardTitle>Sesiones promedio</CardTitle>
+            <CardTitle>Average Sessions</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-center">
               <div className="text-3xl font-bold text-blue-500">3.2</div>
-              <p className="text-sm text-muted-foreground">sesiones por día</p>
+              <p className="text-sm text-muted-foreground">sessions per day</p>
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Canciones por sesión</CardTitle>
+            <CardTitle>Songs per session</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-center">
               <div className="text-3xl font-bold text-green-500">12.8</div>
-              <p className="text-sm text-muted-foreground">canciones promedio</p>
+              <p className="text-sm text-muted-foreground">average songs</p>
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Tasa de conversión</CardTitle>
+            <CardTitle>Conversion rate</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-center">
               <div className="text-3xl font-bold text-purple-500">4.2%</div>
-              <p className="text-sm text-muted-foreground">visitante → usuario</p>
+              <p className="text-sm text-muted-foreground">visitor → user</p>
             </div>
           </CardContent>
         </Card>

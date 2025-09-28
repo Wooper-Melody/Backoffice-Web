@@ -6,40 +6,40 @@ import { ArrowRight, Clock, Globe, Shield, CheckCircle } from "lucide-react"
 
 const stateTransitions = [
   {
-    from: "Programado",
-    to: "Publicado",
-    trigger: "Automático al llegar fecha/hora",
+    from: "Scheduled",
+    to: "Published",
+    trigger: "Automatic on scheduled date/time",
     icon: Clock,
     color: "blue",
   },
   {
-    from: "Publicado",
-    to: "No-disponible-región",
-    trigger: "Cambio en configuración territorial",
+    from: "Published",
+    to: "Region-unavailable",
+    trigger: "Change in territorial configuration",
     icon: Globe,
     color: "yellow",
   },
   {
-    from: "Cualquier estado",
-    to: "Bloqueado-admin",
-    trigger: "Acción manual del administrador",
+    from: "Any state",
+    to: "Admin-blocked",
+    trigger: "Manual admin action",
     icon: Shield,
     color: "red",
   },
   {
-    from: "Bloqueado-admin",
-    to: "Estado anterior",
-    trigger: "Desbloqueo manual",
+    from: "Admin-blocked",
+    to: "Previous state",
+    trigger: "Manual unblock",
     icon: CheckCircle,
     color: "green",
   },
 ]
 
 const stateStats = [
-  { state: "Publicado", count: 11847, percentage: 92.2, color: "green" },
-  { state: "Programado", count: 156, percentage: 1.2, color: "blue" },
-  { state: "No-disponible-región", count: 797, percentage: 6.2, color: "yellow" },
-  { state: "Bloqueado-admin", count: 47, percentage: 0.4, color: "red" },
+  { state: "Published", count: 11847, percentage: 92.2, color: "green" },
+  { state: "Scheduled", count: 156, percentage: 1.2, color: "blue" },
+  { state: "Region-unavailable", count: 797, percentage: 6.2, color: "yellow" },
+  { state: "Admin-blocked", count: 47, percentage: 0.4, color: "red" },
 ]
 
 export default function CatalogStatesPage() {
@@ -47,17 +47,17 @@ export default function CatalogStatesPage() {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Gestión de Estados</h1>
-          <p className="text-muted-foreground">Visualiza y gestiona las transiciones de estado del catálogo</p>
+          <div>
+          <h1 className="text-3xl font-bold tracking-tight">State Management</h1>
+          <p className="text-muted-foreground">View and manage catalog state transitions</p>
         </div>
       </div>
 
       {/* State Distribution */}
       <Card>
-        <CardHeader>
-          <CardTitle>Distribución de Estados</CardTitle>
-          <CardDescription>Estado actual de todo el contenido en el catálogo</CardDescription>
+          <CardHeader>
+          <CardTitle>State Distribution</CardTitle>
+          <CardDescription>Current state across all catalog content</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -75,7 +75,7 @@ export default function CatalogStatesPage() {
                   >
                     {stat.state}
                   </Badge>
-                  <span className="font-medium">{stat.count.toLocaleString()} elementos</span>
+                  <span className="font-medium">{stat.count.toLocaleString()} items</span>
                 </div>
                 <div className="flex items-center space-x-3 min-w-[200px]">
                   <Progress value={stat.percentage} className="flex-1" />
@@ -90,48 +90,48 @@ export default function CatalogStatesPage() {
       {/* State Priority */}
       <Card>
         <CardHeader>
-          <CardTitle>Prioridad de Estados</CardTitle>
-          <CardDescription>Orden de precedencia cuando múltiples estados aplican al mismo contenido</CardDescription>
+          <CardTitle>State Priority</CardTitle>
+          <CardDescription>Order of precedence when multiple states apply to the same content</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center space-x-4 py-8">
             <div className="flex items-center space-x-2">
               <div className="w-3 h-3 bg-red-500 rounded-full"></div>
               <Badge variant="outline" className="bg-red-500/10 text-red-500 border-red-500/20">
-                Bloqueado-admin
+                Admin-blocked
               </Badge>
             </div>
             <ArrowRight className="h-4 w-4 text-muted-foreground" />
             <div className="flex items-center space-x-2">
               <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
               <Badge variant="outline" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">
-                No-disponible-región
+                Region-unavailable
               </Badge>
             </div>
             <ArrowRight className="h-4 w-4 text-muted-foreground" />
             <div className="flex items-center space-x-2">
               <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
               <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20">
-                Programado
+                Scheduled
               </Badge>
             </div>
             <ArrowRight className="h-4 w-4 text-muted-foreground" />
             <div className="flex items-center space-x-2">
               <div className="w-3 h-3 bg-green-500 rounded-full"></div>
               <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">
-                Publicado
+                Published
               </Badge>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground text-center">Mayor prioridad ← → Menor prioridad</p>
+          <p className="text-sm text-muted-foreground text-center">More priority ← → Less priority</p>
         </CardContent>
       </Card>
 
       {/* State Transitions */}
       <Card>
         <CardHeader>
-          <CardTitle>Transiciones Permitidas</CardTitle>
-          <CardDescription>Reglas de cambio de estado y sus desencadenantes</CardDescription>
+          <CardTitle>Allowed Transitions</CardTitle>
+          <CardDescription>Rules for state changes and their triggers</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2">

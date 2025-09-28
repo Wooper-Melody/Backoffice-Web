@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import { format } from "date-fns"
-import { es } from "date-fns/locale"
+import { enUS } from "date-fns/locale"
 
 const upcomingReleases = [
   {
@@ -55,12 +55,12 @@ export default function SchedulingPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Programación de Contenido</h1>
-          <p className="text-muted-foreground">Gestiona las fechas y horarios de publicación del contenido</p>
+          <h1 className="text-3xl font-bold tracking-tight">Content Scheduling</h1>
+          <p className="text-muted-foreground">Manage content publication dates and times</p>
         </div>
         <Button>
           <Clock className="h-4 w-4 mr-2" />
-          Programar nuevo contenido
+          Schedule new content
         </Button>
       </div>
 
@@ -70,7 +70,7 @@ export default function SchedulingPage() {
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Calendar className="h-5 w-5" />
-              <span>Calendario de lanzamientos</span>
+              <span>Release Calendar</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -78,7 +78,7 @@ export default function SchedulingPage() {
               mode="single"
               selected={selectedDate}
               onSelect={setSelectedDate}
-              locale={es}
+              locale={enUS}
               className="rounded-md border"
             />
           </CardContent>
@@ -101,7 +101,7 @@ export default function SchedulingPage() {
                 </div>
               </div>
             </div>
-            <CardDescription>Contenido programado para publicación automática</CardDescription>
+            <CardDescription>Content scheduled for automatic publication</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -116,7 +116,7 @@ export default function SchedulingPage() {
                     <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                       <div className="flex items-center space-x-1">
                         <Clock className="h-4 w-4" />
-                        <span>{format(release.scheduledDate, "PPp", { locale: es })}</span>
+                        <span>{format(release.scheduledDate, "PPp", { locale: enUS })}</span>
                       </div>
                       <div className="flex items-center space-x-1">
                         <Globe className="h-4 w-4" />
@@ -130,10 +130,10 @@ export default function SchedulingPage() {
                     </Badge>
                     <div className="flex space-x-2">
                       <Button variant="ghost" size="sm">
-                        Editar
+                        Edit
                       </Button>
                       <Button variant="ghost" size="sm">
-                        Cancelar
+                        Cancel
                       </Button>
                     </div>
                   </div>
@@ -147,23 +147,23 @@ export default function SchedulingPage() {
       {/* Time Zone Settings */}
       <Card>
         <CardHeader>
-          <CardTitle>Configuración de zona horaria</CardTitle>
-          <CardDescription>Configura las zonas horarias para la publicación automática por región</CardDescription>
+          <CardTitle>Time Zone Settings</CardTitle>
+          <CardDescription>Configure time zones for automatic publishing by region</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {[
-              { region: "Estados Unidos", timezone: "EST (UTC-5)", time: "12:00 AM" },
-              { region: "Europa", timezone: "CET (UTC+1)", time: "12:00 AM" },
+              { region: "United States", timezone: "EST (UTC-5)", time: "12:00 AM" },
+              { region: "Europe", timezone: "CET (UTC+1)", time: "12:00 AM" },
               { region: "Asia", timezone: "JST (UTC+9)", time: "12:00 AM" },
-              { region: "América Latina", timezone: "ART (UTC-3)", time: "12:00 AM" },
+              { region: "Latin America", timezone: "ART (UTC-3)", time: "12:00 AM" },
             ].map((tz) => (
               <div key={tz.region} className="p-4 border rounded-lg">
                 <h4 className="font-medium mb-2">{tz.region}</h4>
                 <p className="text-sm text-muted-foreground mb-1">{tz.timezone}</p>
-                <p className="text-sm">Hora de publicación: {tz.time}</p>
+                <p className="text-sm">Publish time: {tz.time}</p>
                 <Button variant="ghost" size="sm" className="mt-2">
-                  Configurar
+                  Configure
                 </Button>
               </div>
             ))}
