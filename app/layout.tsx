@@ -3,7 +3,7 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { SWRProvider } from "@/components/providers/swr-provider"
-import "@/lib/env-validator"
+import { AuthProvider } from "@/components/auth/auth-provider"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -13,7 +13,6 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Melody Admin - Backoffice",
   description: "Admin panel for Melody music streaming platform",
-    generator: 'v0.app'
 }
 
 export default function RootLayout({
@@ -24,7 +23,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} dark`}>
       <body className="font-sans antialiased">
-        <SWRProvider>{children}</SWRProvider>
+        <AuthProvider>
+          <SWRProvider>{children}</SWRProvider>
+        </AuthProvider>
       </body>
     </html>
   )
