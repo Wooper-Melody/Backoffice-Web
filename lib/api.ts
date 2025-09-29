@@ -1,14 +1,39 @@
 // API client for Melody backoffice
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api"
+
+// Configure API base URL with validation
+function getApiBaseUrl(): string {
+  const url = process.env.NEXT_PUBLIC_API_URL
+  
+  if (!url) {
+    console.warn('NEXT_PUBLIC_API_URL is not set, using local fallback')
+    return '/api'
+  }
+  
+  // Validate that the URL is valid
+  try {
+    new URL(url)
+    return url
+  } catch (error) {
+    console.error('NEXT_PUBLIC_API_URL is not a valid URL:', url)
+    return '/api'
+  }
+}
+
+const API_BASE_URL = getApiBaseUrl()
+
+// Development logging
+if (process.env.NODE_ENV === 'development') {
+  console.log('API Base URL set to:', API_BASE_URL)
+}
 
 export interface CatalogItem {
   id: string
-  type: "Canción" | "Colección"
+  type: "Song" | "Collection"
   title: string
   artist: string
   collection?: string
   publishDate: string
-  status: "Publicado" | "Programado" | "No-disponible-región" | "Bloqueado-admin"
+  status: "Published" | "Scheduled" | "Unavailable-region" | "Blocked-admin"
   hasVideo: boolean
   duration: string
   cover?: string
@@ -76,13 +101,31 @@ class ApiClient {
       ...options,
     }
 
-    const response = await fetch(url, config)
+    try {
+      const response = await fetch(url, config)
 
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}`)
+      if (!response.ok) {
+        const errorData = await response.text().catch(() => 'Unknown error')
+        throw new Error(`API Error [${response.status}]: ${response.statusText} - ${errorData}`)
+      }
+
+      // Handle empty responses
+      const contentType = response.headers.get('content-type')
+      if (contentType && contentType.includes('application/json')) {
+        return response.json()
+      } else {
+        return response.text() as unknown as T
+      }
+    } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('API request error:', {
+          url,
+          error: error instanceof Error ? error.message : error,
+          config
+        })
+      }
+      throw error
     }
-
-    return response.json()
   }
 
   // Catalog API

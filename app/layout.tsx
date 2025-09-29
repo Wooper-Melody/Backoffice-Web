@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { SWRProvider } from "@/components/providers/swr-provider"
+import "@/lib/env-validator"
 
 const inter = Inter({
   subsets: ["latin"],
