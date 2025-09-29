@@ -19,6 +19,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Search, Eye, RotateCcw, Shield, ShieldOff, AlertTriangle } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 
 const blocks = [
   {
@@ -76,6 +77,16 @@ export default function BlocksPage() {
   const [typeFilter, setTypeFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [selectedBlock, setSelectedBlock] = useState<any>(null)
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
+  const { toast } = useToast()
+
+  const [newBlockForm, setNewBlockForm] = useState({
+    contentId: "",
+    blockType: "",
+    scope: "",
+    reason: "",
+  })
 
   const filteredBlocks = blocks.filter((block) => {
     const matchesSearch =
@@ -86,6 +97,84 @@ export default function BlocksPage() {
     const matchesStatus = statusFilter === "all" || block.status === statusFilter
     return matchesSearch && matchesType && matchesStatus
   })
+
+  const handleViewBlock = (block: any) => {
+    setSelectedBlock(block)
+    setIsViewDialogOpen(true)
+  }
+
+  const handleUnblockContent = async (blockId: string) => {
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      toast({
+        title: "Content unblocked",
+        description: "The content has been successfully unblocked.",
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to unblock the content.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleReactivateBlock = async (blockId: string) => {
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      toast({
+        title: "Block Reactivated",
+        description: "The block has been successfully reactivated.",
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to reactivate the block.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleCreateBlock = async () => {
+    try {
+      // Validate form
+      if (!newBlockForm.contentId || !newBlockForm.blockType || !newBlockForm.scope || !newBlockForm.reason) {
+        toast({
+          title: "Error",
+          description: "Please complete all fields.",
+          variant: "destructive",
+        })
+        return
+      }
+
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      toast({
+        title: "Content Blocked",
+        description: "The content has been successfully blocked.",
+      })
+
+      // Reset form and close dialog
+      setNewBlockForm({
+        contentId: "",
+        blockType: "",
+        scope: "",
+        reason: "",
+      })
+      setIsCreateDialogOpen(false)
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to block the content.",
+        variant: "destructive",
+      })
+    }
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -114,13 +203,22 @@ export default function BlocksPage() {
                 <Label htmlFor="contentId" className="text-right">
                   Content ID
                 </Label>
-                <Input id="contentId" placeholder="Enter content ID" className="col-span-3" />
+                <Input
+                  id="contentId"
+                  placeholder="Enter content ID"
+                  className="col-span-3"
+                  value={newBlockForm.contentId}
+                  onChange={(e) => setNewBlockForm({ ...newBlockForm, contentId: e.target.value })}
+                />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="blockType" className="text-right">
                   Block Type
                 </Label>
-                <Select>
+                <Select
+                  value={newBlockForm.blockType}
+                  onValueChange={(value) => setNewBlockForm({ ...newBlockForm, blockType: value })}
+                >
                   <SelectTrigger className="col-span-3">
                     <SelectValue placeholder="Select block type" />
                   </SelectTrigger>
@@ -135,7 +233,10 @@ export default function BlocksPage() {
                 <Label htmlFor="scope" className="text-right">
                   Scope
                 </Label>
-                <Select>
+                <Select
+                  value={newBlockForm.scope}
+                  onValueChange={(value) => setNewBlockForm({ ...newBlockForm, scope: value })}
+                >
                   <SelectTrigger className="col-span-3">
                     <SelectValue placeholder="Select scope" />
                   </SelectTrigger>
@@ -152,11 +253,17 @@ export default function BlocksPage() {
                 <Label htmlFor="reason" className="text-right">
                   Reason
                 </Label>
-                <Textarea id="reason" placeholder="Explain the reason for blocking" className="col-span-3" />
+                <Textarea
+                  id="reason"
+                  placeholder="Explain the reason for blocking"
+                  className="col-span-3"
+                  value={newBlockForm.reason}
+                  onChange={(e) => setNewBlockForm({ ...newBlockForm, reason: e.target.value })}
+                />
               </div>
             </div>
             <DialogFooter>
-              <Button type="submit" variant="destructive">
+              <Button type="submit" variant="destructive" onClick={handleCreateBlock}>
                 Block Content
               </Button>
             </DialogFooter>
@@ -300,16 +407,16 @@ export default function BlocksPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end space-x-2">
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={() => handleViewBlock(block)}>
                         <Eye className="h-4 w-4" />
                       </Button>
                       {block.status === "active" && (
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" onClick={() => handleUnblockContent(block.id)}>
                           <ShieldOff className="h-4 w-4" />
                         </Button>
                       )}
                       {block.status === "expired" && (
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" onClick={() => handleReactivateBlock(block.id)}>
                           <RotateCcw className="h-4 w-4" />
                         </Button>
                       )}
@@ -321,6 +428,70 @@ export default function BlocksPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Block Details</DialogTitle>
+            <DialogDescription>Detailed information about the content block</DialogDescription>
+          </DialogHeader>
+          {selectedBlock && (
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Content Title</Label>
+                  <p className="text-sm text-muted-foreground">{selectedBlock.contentTitle}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Artist</Label>
+                  <p className="text-sm text-muted-foreground">{selectedBlock.contentArtist}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Content ID</Label>
+                  <p className="text-sm text-muted-foreground">{selectedBlock.contentId}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Block Type</Label>
+                  <Badge
+                    variant="outline"
+                    className={blockTypeColors[selectedBlock.blockType as keyof typeof blockTypeColors]}
+                  >
+                    {selectedBlock.blockType}
+                  </Badge>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Scope</Label>
+                  <Badge variant="secondary">{selectedBlock.scope}</Badge>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Status</Label>
+                  <Badge variant="outline" className={statusColors[selectedBlock.status as keyof typeof statusColors]}>
+                    {selectedBlock.status}
+                  </Badge>
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Reason</Label>
+                <p className="text-sm text-muted-foreground">{selectedBlock.reason}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Blocked By</Label>
+                  <p className="text-sm text-muted-foreground">{selectedBlock.blockedBy}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Blocked Date</Label>
+                  <p className="text-sm text-muted-foreground">{new Date(selectedBlock.blockedAt).toLocaleString()}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

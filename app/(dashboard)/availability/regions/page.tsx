@@ -17,9 +17,20 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Search, Plus, Edit, Trash2, Globe, MapPin } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 
 const regions = [
   {
@@ -64,6 +75,16 @@ export default function RegionalConfigurationPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [selectedRegion, setSelectedRegion] = useState<any>(null)
+  const { toast } = useToast()
+
+  const [regionForm, setRegionForm] = useState({
+    name: "",
+    code: "",
+    countries: "",
+  })
 
   const filteredRegions = regions.filter((region) => {
     const matchesSearch =
@@ -72,6 +93,126 @@ export default function RegionalConfigurationPage() {
     const matchesStatus = statusFilter === "all" || region.status === statusFilter
     return matchesSearch && matchesStatus
   })
+
+  const handleStatusToggle = async (regionId: string, currentStatus: string) => {
+    try {
+      const newStatus = currentStatus === "active" ? "inactive" : "active"
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      toast({
+        title: "Status Updated",
+        description: `The region has been successfully ${newStatus === "active" ? "activated" : "deactivated"}.`,
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update the region status.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleCreateRegion = async () => {
+    try {
+      // Validate form
+      if (!regionForm.name || !regionForm.code || !regionForm.countries) {
+        toast({
+          title: "Error",
+          description: "Please complete all fields.",
+          variant: "destructive",
+        })
+        return
+      }
+
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      toast({
+        title: "Region Created",
+        description: "The region has been successfully created.",
+      })
+
+      // Reset form and close dialog
+      setRegionForm({ name: "", code: "", countries: "" })
+      setIsCreateDialogOpen(false)
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create the region.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleEditRegion = (region: any) => {
+    setSelectedRegion(region)
+    setRegionForm({
+      name: region.name,
+      code: region.code,
+      countries: region.countries.join(", "),
+    })
+    setIsEditDialogOpen(true)
+  }
+
+  const handleUpdateRegion = async () => {
+    try {
+      // Validate form
+      if (!regionForm.name || !regionForm.code || !regionForm.countries) {
+        toast({
+          title: "Error",
+          description: "Please complete all fields.",
+          variant: "destructive",
+        })
+        return
+      }
+
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      toast({
+        title: "Region Updated",
+        description: "The region has been successfully updated.",
+      })
+
+      // Reset form and close dialog
+      setRegionForm({ name: "", code: "", countries: "" })
+      setSelectedRegion(null)
+      setIsEditDialogOpen(false)
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update the region.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleDeleteRegion = (region: any) => {
+    setSelectedRegion(region)
+    setIsDeleteDialogOpen(true)
+  }
+
+  const handleConfirmDelete = async () => {
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      toast({
+        title: "Region Deleted",
+        description: "The region has been successfully deleted.",
+      })
+
+      setSelectedRegion(null)
+      setIsDeleteDialogOpen(false)
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete the region.",
+        variant: "destructive",
+      })
+    }
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -98,23 +239,43 @@ export default function RegionalConfigurationPage() {
                 <Label htmlFor="name" className="text-right">
                   Name
                 </Label>
-                <Input id="name" placeholder="Region name" className="col-span-3" />
+                <Input
+                  id="name"
+                  placeholder="Region name"
+                  className="col-span-3"
+                  value={regionForm.name}
+                  onChange={(e) => setRegionForm({ ...regionForm, name: e.target.value })}
+                />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="code" className="text-right">
                   Code
                 </Label>
-                <Input id="code" placeholder="Region code" className="col-span-3" />
+                <Input
+                  id="code"
+                  placeholder="Region code"
+                  className="col-span-3"
+                  value={regionForm.code}
+                  onChange={(e) => setRegionForm({ ...regionForm, code: e.target.value })}
+                />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="countries" className="text-right">
                   Countries
                 </Label>
-                <Textarea id="countries" placeholder="List countries separated by commas" className="col-span-3" />
+                <Textarea
+                  id="countries"
+                  placeholder="List countries separated by commas"
+                  className="col-span-3"
+                  value={regionForm.countries}
+                  onChange={(e) => setRegionForm({ ...regionForm, countries: e.target.value })}
+                />
               </div>
             </div>
             <DialogFooter>
-              <Button type="submit">Create Region</Button>
+              <Button type="submit" onClick={handleCreateRegion}>
+                Create Region
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -150,7 +311,7 @@ export default function RegionalConfigurationPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {new Intl.NumberFormat('en-US').format(regions.reduce((acc, region) => acc + region.contentCount, 0))}
+              {regions.reduce((acc, region) => acc + region.contentCount, 0).toLocaleString()}
             </div>
             <p className="text-xs text-muted-foreground">Total content items managed</p>
           </CardContent>
@@ -238,20 +399,23 @@ export default function RegionalConfigurationPage() {
                       )}
                     </div>
                   </TableCell>
-                  <TableCell>{new Intl.NumberFormat('en-US').format(region.contentCount)}</TableCell>
+                  <TableCell>{region.contentCount.toLocaleString()}</TableCell>
                   <TableCell>{region.restrictions}</TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-2">
-                      <Switch checked={region.status === "active"} />
+                      <Switch
+                        checked={region.status === "active"}
+                        onCheckedChange={() => handleStatusToggle(region.id, region.status)}
+                      />
                       <Badge variant={region.status === "active" ? "default" : "secondary"}>{region.status}</Badge>
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end space-x-2">
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={() => handleEditRegion(region)}>
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={() => handleDeleteRegion(region)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -262,6 +426,80 @@ export default function RegionalConfigurationPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Region</DialogTitle>
+            <DialogDescription>Update the geographic region information.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-name" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="edit-name"
+                placeholder="Region name"
+                className="col-span-3"
+                value={regionForm.name}
+                onChange={(e) => setRegionForm({ ...regionForm, name: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-code" className="text-right">
+                Code
+              </Label>
+              <Input
+                id="edit-code"
+                placeholder="Region code"
+                className="col-span-3"
+                value={regionForm.code}
+                onChange={(e) => setRegionForm({ ...regionForm, code: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-countries" className="text-right">
+                Countries
+              </Label>
+              <Textarea
+                id="edit-countries"
+                placeholder="List countries separated by commas"
+                className="col-span-3"
+                value={regionForm.countries}
+                onChange={(e) => setRegionForm({ ...regionForm, countries: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateRegion}>Update Region</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the region "{selectedRegion?.name}" and
+              may affect content availability in that region.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
