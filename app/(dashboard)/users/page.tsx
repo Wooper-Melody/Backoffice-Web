@@ -199,7 +199,7 @@ export default function UsersPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{users.length.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{new Intl.NumberFormat('en-US').format(users.length)}</div>
             <p className="text-xs text-muted-foreground">Registered accounts</p>
           </CardContent>
         </Card>

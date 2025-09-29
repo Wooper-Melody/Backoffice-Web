@@ -249,7 +249,7 @@ export default function AuditPage() {
             <TableBody>
               {filteredLogs.map((log) => (
                 <TableRow key={log.id}>
-                  <TableCell className="text-sm">{new Date(log.timestamp).toLocaleString()}</TableCell>
+                  <TableCell className="text-sm">{new Date(log.timestamp).toLocaleString('en-US')}</TableCell>
                   <TableCell className="font-medium">{log.action}</TableCell>
                   <TableCell>
                     <div className="text-sm">

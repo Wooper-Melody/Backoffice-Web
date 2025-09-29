@@ -231,7 +231,7 @@ export default function UserMetricsPage() {
                   </div>
                   <div>
                     <h4 className="font-medium">{country.country}</h4>
-                    <p className="text-sm text-muted-foreground">{country.users.toLocaleString()} users</p>
+                    <p className="text-sm text-muted-foreground">{new Intl.NumberFormat('en-US').format(country.users)} users</p>
                   </div>
                 </div>
                 <div className="text-right">

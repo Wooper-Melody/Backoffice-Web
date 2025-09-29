@@ -60,7 +60,9 @@ export function EditRegionModal({ open, onOpenChange, region, onSave }: EditRegi
         name: region.name || "",
         code: region.code || "",
         description: region.description || "",
-        countries: region.countries || [],
+        // Ensure countries is always an array. Some region objects may include a count
+        // or a different shape (e.g. number). Normalize to an array of strings.
+        countries: Array.isArray(region.countries) ? region.countries : [],
       })
     } else {
       setFormData({
@@ -96,9 +98,9 @@ export function EditRegionModal({ open, onOpenChange, region, onSave }: EditRegi
   const handleCountryToggle = (country: string) => {
     setFormData((prev) => ({
       ...prev,
-      countries: prev.countries.includes(country)
-        ? prev.countries.filter((c) => c !== country)
-        : [...prev.countries, country],
+      countries: (Array.isArray(prev.countries) ? prev.countries : []).includes(country)
+        ? (prev.countries as string[]).filter((c) => c !== country)
+        : [...(Array.isArray(prev.countries) ? prev.countries : []), country],
     }))
   }
 

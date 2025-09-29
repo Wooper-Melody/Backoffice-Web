@@ -75,7 +75,7 @@ export default function CatalogStatesPage() {
                   >
                     {stat.state}
                   </Badge>
-                  <span className="font-medium">{stat.count.toLocaleString()} items</span>
+                  <span className="font-medium">{new Intl.NumberFormat('en-US').format(stat.count)} items</span>
                 </div>
                 <div className="flex items-center space-x-3 min-w-[200px]">
                   <Progress value={stat.percentage} className="flex-1" />

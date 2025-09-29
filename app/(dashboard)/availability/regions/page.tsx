@@ -150,7 +150,7 @@ export default function RegionalConfigurationPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {regions.reduce((acc, region) => acc + region.contentCount, 0).toLocaleString()}
+              {new Intl.NumberFormat('en-US').format(regions.reduce((acc, region) => acc + region.contentCount, 0))}
             </div>
             <p className="text-xs text-muted-foreground">Total content items managed</p>
           </CardContent>
@@ -238,7 +238,7 @@ export default function RegionalConfigurationPage() {
                       )}
                     </div>
                   </TableCell>
-                  <TableCell>{region.contentCount.toLocaleString()}</TableCell>
+                  <TableCell>{new Intl.NumberFormat('en-US').format(region.contentCount)}</TableCell>
                   <TableCell>{region.restrictions}</TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-2">

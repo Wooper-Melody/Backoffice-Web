@@ -103,14 +103,14 @@ export function UserDetailsModal({ isOpen, onClose, user }: UserDetailsModalProp
                   <CardContent className="space-y-3">
                     <div className="flex items-center space-x-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">Joined {new Date(user.registeredAt).toLocaleDateString()}</span>
+                      <span className="text-sm">Joined {new Date(user.registeredAt).toLocaleDateString('en-US')}</span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <MapPin className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm">{user.country}</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <span className="text-sm">Last login: {new Date(user.lastLogin).toLocaleDateString()}</span>
+                      <span className="text-sm">Last login: {new Date(user.lastLogin).toLocaleDateString('en-US')}</span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <span className="text-sm">Active devices: {user.devices}</span>
@@ -172,7 +172,7 @@ export function UserDetailsModal({ isOpen, onClose, user }: UserDetailsModalProp
                           <p className="text-xs text-muted-foreground">{activity.details}</p>
                         </div>
                         <span className="text-xs text-muted-foreground">
-                          {new Date(activity.timestamp).toLocaleString()}
+                          {new Date(activity.timestamp).toLocaleString('en-US')}
                         </span>
                       </div>
                     ))}

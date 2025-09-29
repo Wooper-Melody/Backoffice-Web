@@ -92,11 +92,11 @@ export function ViewUserModal({ open, onOpenChange, user }: ViewUserModalProps) 
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Registered</p>
-                  <p className="text-sm">{new Date(user.registeredAt).toLocaleDateString()}</p>
+                  <p className="text-sm">{new Date(user.registeredAt).toLocaleDateString('en-US')}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Last Login</p>
-                  <p className="text-sm">{new Date(user.lastLogin).toLocaleDateString()}</p>
+                  <p className="text-sm">{new Date(user.lastLogin).toLocaleDateString('en-US')}</p>
                 </div>
               </CardContent>
             </Card>
@@ -162,7 +162,7 @@ export function ViewUserModal({ open, onOpenChange, user }: ViewUserModalProps) 
               <div className="space-y-2">
                 <div className="flex justify-between items-center text-sm">
                   <span>Last login</span>
-                  <span className="text-muted-foreground">{new Date(user.lastLogin).toLocaleString()}</span>
+                  <span className="text-muted-foreground">{new Date(user.lastLogin).toLocaleString('en-US')}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span>Account status</span>

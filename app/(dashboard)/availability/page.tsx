@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Clock, Shield, Plus, Edit, Trash2 } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { EditRegionModal } from "@/components/modals/edit-region-modal"
-import { DeleteRegionModal } from "@/components/modals/delete-region-modal"
+import { EditRegionModal } from "@/components/modals/edit-regional-modal"
+import { DeleteRegionModal } from "@/components/modals/delete-regional-modal"
 import { ScheduleContentModal } from "@/components/modals/schedule-content-modal"
 import { UnblockContentModal } from "@/components/modals/unblock-content-modal"
 
@@ -45,7 +45,7 @@ export default function AvailabilityPage() {
               <CardTitle className="text-sm font-medium">{stat.label}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stat.value.toLocaleString()}</div>
+              <div className="text-2xl font-bold">{new Intl.NumberFormat('en-US').format(stat.value)}</div>
               <p className="text-xs text-muted-foreground">{stat.change} from last month</p>
             </CardContent>
           </Card>
@@ -286,7 +286,7 @@ function ScheduledContentTable() {
             <TableCell>
               <div className="flex items-center space-x-2">
                 <Clock className="h-4 w-4 text-muted-foreground" />
-                <span>{new Date(item.scheduledDate).toLocaleString()}</span>
+                <span>{new Date(item.scheduledDate).toLocaleString('en-US')}</span>
               </div>
             </TableCell>
             <TableCell>
@@ -366,7 +366,7 @@ function BlockedContentTable({ onUnblockContent }: { onUnblockContent: (content:
             <TableCell>
               <Badge variant="outline">{item.type}</Badge>
             </TableCell>
-            <TableCell>{new Date(item.blockedDate).toLocaleString()}</TableCell>
+            <TableCell>{new Date(item.blockedDate).toLocaleString('en-US')}</TableCell>
             <TableCell>{item.reason}</TableCell>
             <TableCell>
               <Badge variant="secondary">{item.scope}</Badge>
