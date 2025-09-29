@@ -77,7 +77,7 @@ export function Header() {
     setIsSearching(true)
     try {
       // In real app, this would be an API call
-      const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`)
+      const response = await fetch(`/search?q=${encodeURIComponent(query)}`)
       if (response.ok) {
         const results = await response.json()
         setSearchResults(results)
@@ -230,7 +230,7 @@ export function Header() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-8 w-8 rounded-full">
               <Avatar className="h-8 w-8">
-                <AvatarImage src="/avatars/admin.png" alt="Admin" />
+                <AvatarImage src="/placeholder.svg" alt="Admin" />
                 <AvatarFallback>{user?.name?.charAt(0) || "AD"}</AvatarFallback>
               </Avatar>
             </Button>

@@ -74,6 +74,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
+          // Backend expects token in x-access-token header for JWT validation
+          ...(typeof window !== 'undefined' && token ? { 'x-access-token': token } : {}),
         },
       })
     } catch (error) {

@@ -5,6 +5,7 @@ import type React from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useAuth } from '@/components/auth/auth-provider'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -18,14 +19,16 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const router = useRouter()
+  const { login } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError("")
-
+    console.log('Attempting login with email:', email);
     try {
-      const response = await fetch("/api/auth/login", {
+      // Use relative path so Next can proxy to the external API in development
+      const response = await fetch('/auth/login', {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -36,18 +39,21 @@ export default function LoginPage() {
       const data = await response.json()
 
       if (response.ok) {
-        // Store token in session storage
-        sessionStorage.setItem("admin_token", data.token)
-        sessionStorage.setItem("admin_user", JSON.stringify(data.user))
-
-        // Redirect to dashboard
-        router.push("/catalog")
+        // Use auth context so provider updates app state and performs navigation
+        try {
+          login(data.token, data.user)
+        } catch (err) {
+          // Fallback: store token and navigate
+          sessionStorage.setItem("admin_token", data.token)
+          sessionStorage.setItem("admin_user", JSON.stringify(data.user))
+          router.push("/catalog")
+        }
       } else {
-        setError(data.message || "Error al iniciar sesión")
+        setError(data.message || "Error while logging in")
       }
     } catch (error) {
       console.error("Login error:", error)
-      setError("Error de conexión. Intenta nuevamente.")
+      setError("Error while connecting. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -77,6 +83,8 @@ export default function LoginPage() {
               <Label htmlFor="email">Email Address</Label>
               <Input
                 id="email"
+                name="email"
+                autoComplete="email"
                 type="email"
                 placeholder="admin@melody.com"
                 value={email}
@@ -91,6 +99,8 @@ export default function LoginPage() {
               <div className="relative">
                 <Input
                   id="password"
+                  name="password"
+                  autoComplete="current-password"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   value={password}

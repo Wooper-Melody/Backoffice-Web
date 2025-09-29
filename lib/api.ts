@@ -19,7 +19,7 @@ function getApiBaseUrl(): string {
   }
 }
 
-const API_BASE_URL = getApiBaseUrl()
+export const API_BASE_URL = getApiBaseUrl()
 
 // Development logging
 if (process.env.NODE_ENV === 'development') {
@@ -91,7 +91,28 @@ export interface MetricsData {
 
 class ApiClient {
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const url = `${API_BASE_URL}${endpoint}`
+    // If running in the browser and API_BASE_URL points to a different origin,
+    // use a relative path so the request goes to the Next server (which will proxy
+    // to the external API via rewrites). This avoids CORS in development.
+    let url: string
+    if (typeof window !== 'undefined') {
+      try {
+        const apiOrigin = new URL(API_BASE_URL).origin
+        const currentOrigin = window.location.origin
+        if (apiOrigin !== currentOrigin) {
+          // Use relative endpoint to hit Next server which will proxy
+          url = endpoint.startsWith('/') ? endpoint : `/${endpoint}`
+        } else {
+          url = `${API_BASE_URL}${endpoint}`
+        }
+      } catch (e) {
+        // If API_BASE_URL isn't a valid URL, fallback to relative
+        url = endpoint.startsWith('/') ? endpoint : `/${endpoint}`
+      }
+    } else {
+      // On server side, use absolute API base
+      url = `${API_BASE_URL}${endpoint}`
+    }
 
     const config: RequestInit = {
       headers: {
@@ -99,6 +120,23 @@ class ApiClient {
         ...options.headers,
       },
       ...options,
+    }
+
+    // Inject admin token into requests as x-access-token when running in the browser
+    // Do not attach for the login route to avoid sending empty/old tokens
+    try {
+      if (typeof window !== "undefined" && endpoint.indexOf('/auth/login') === -1) {
+        const adminToken = sessionStorage.getItem('admin_token')
+        if (adminToken) {
+          // Prefer x-access-token as required by backend, but keep existing Authorization if present
+          ;(config.headers as Record<string, string>)['x-access-token'] = adminToken
+        }
+      }
+    } catch (e) {
+      // sessionStorage may throw in some strict environments; fail silently and continue
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('Could not read admin_token from sessionStorage', e)
+      }
     }
 
     try {
