@@ -1,11 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { Search, MoreHorizontal, Eye, Edit, Shield, ShieldOff } from "lucide-react"
+import { MoreHorizontal, Eye, Edit, Shield, ShieldOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,9 +12,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { DataTable } from "@/components/data-table/data-table"
+import { EditMetadataModal } from "@/components/modals/edit-metadata-modal"
+import { BlockContentModal } from "@/components/modals/block-content-modal"
+import { ExportMenu } from "@/components/common/export-menu"
 
 // Mock data
 const catalogItems = [
@@ -93,18 +94,160 @@ export default function CatalogPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [typeFilter, setTypeFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
+  const [editModalOpen, setEditModalOpen] = useState(false)
+  const [blockModalOpen, setBlockModalOpen] = useState(false)
+  const [selectedItem, setSelectedItem] = useState<any>(null)
 
-  const filteredItems = catalogItems.filter((item) => {
-    const matchesSearch =
-      item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.artist.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.collection && item.collection.toLowerCase().includes(searchTerm.toLowerCase()))
+  const handleViewDetails = (item: any) => {
+    // Navigate to state management page with item details
+    window.location.href = `/catalog/[id]?id=${item.id}`
+  }
 
-    const matchesType = typeFilter === "all" || item.type === typeFilter
-    const matchesStatus = statusFilter === "all" || item.status === statusFilter
+  const handleEditMetadata = (item: any) => {
+    setSelectedItem(item)
+    setEditModalOpen(true)
+  }
 
-    return matchesSearch && matchesType && matchesStatus
-  })
+  const handleBlock = (item: any) => {
+    setSelectedItem(item)
+    setBlockModalOpen(true)
+  }
+
+  const handleUnblock = async (item: any) => {
+    try {
+      const response = await fetch(`/api/catalog/${item.id}/unblock`, {
+        method: "POST",
+      })
+      if (response.ok) {
+        // Refresh data or update state
+        console.log("Content unblocked successfully")
+      }
+    } catch (error) {
+      console.error("Error unblocking content:", error)
+    }
+  }
+
+  const columns = [
+    {
+      key: "cover",
+      label: "",
+      render: (value: string, row: any) => (
+        <Avatar className="h-10 w-10">
+          <AvatarImage src={row.cover || "/placeholder.svg"} alt={row.title} />
+          <AvatarFallback>{row.title.charAt(0)}</AvatarFallback>
+        </Avatar>
+      ),
+    },
+    {
+      key: "type",
+      label: "Type",
+      sortable: true,
+      render: (value: string) => <Badge variant="outline">{value}</Badge>,
+    },
+    {
+      key: "title",
+      label: "Title",
+      sortable: true,
+      render: (value: string, row: any) => (
+        <div className="flex items-center space-x-2">
+          <span className="font-medium">{value}</span>
+          {row.hasVideo && (
+            <Badge variant="secondary" className="text-xs">
+              Video
+            </Badge>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: "artist",
+      label: "Main Artist",
+      sortable: true,
+    },
+    {
+      key: "collection",
+      label: "Collection",
+      sortable: true,
+      render: (value: string) => value || "-",
+    },
+    {
+      key: "publishDate",
+      label: "Publish Date",
+      sortable: true,
+    },
+    {
+      key: "status",
+      label: "Status",
+      sortable: true,
+      render: (value: string) => (
+        <Badge variant="outline" className={statusColors[value as keyof typeof statusColors]}>
+          {value}
+        </Badge>
+      ),
+    },
+    {
+      key: "duration",
+      label: "Duration",
+      sortable: true,
+    },
+    {
+      key: "actions",
+      label: "Actions",
+      render: (value: any, row: any) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => handleViewDetails(row)}>
+              <Eye className="mr-2 h-4 w-4" />
+              View Details
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleEditMetadata(row)}>
+              <Edit className="mr-2 h-4 w-4" />
+              Edit Metadata
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            {row.status === "Admin-blocked" ? (
+              <DropdownMenuItem onClick={() => handleUnblock(row)}>
+                <ShieldOff className="mr-2 h-4 w-4" />
+                Unblock
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem onClick={() => handleBlock(row)}>
+                <Shield className="mr-2 h-4 w-4" />
+                Block
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+  ]
+
+  const filterOptions = [
+    {
+      key: "type",
+      label: "Type",
+      options: [
+        { value: "Song", label: "Song" },
+        { value: "Collection", label: "Collection" },
+      ],
+    },
+    {
+      key: "status",
+      label: "Status",
+      options: [
+        { value: "Published", label: "Published" },
+        { value: "Scheduled", label: "Scheduled" },
+        { value: "Region-unavailable", label: "Region unavailable" },
+        { value: "Admin-blocked", label: "Admin blocked" },
+      ],
+    },
+  ]
 
   return (
     <div className="p-6 space-y-6">
@@ -114,6 +257,12 @@ export default function CatalogPage() {
           <h1 className="text-3xl font-bold tracking-tight">Catalog</h1>
           <p className="text-muted-foreground">Browse and manage platform content</p>
         </div>
+        <ExportMenu
+          onExport={(format) => {
+            console.log(`Exporting catalog data as ${format}`)
+            // Implement export logic
+          }}
+        />
       </div>
 
       {/* Stats Cards */}
@@ -156,140 +305,37 @@ export default function CatalogPage() {
         </Card>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filters and Search</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Search by title, artist or collection..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All types</SelectItem>
-                <SelectItem value="Song">Song</SelectItem>
-                <SelectItem value="Collection">Collection</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                <SelectItem value="Published">Published</SelectItem>
-                <SelectItem value="Scheduled">Scheduled</SelectItem>
-                <SelectItem value="Region-unavailable">Region unavailable</SelectItem>
-                <SelectItem value="Admin-blocked">Admin blocked</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      <DataTable
+        title="Content Catalog"
+        description="Browse and manage all platform content"
+        data={catalogItems}
+        columns={columns}
+        searchable={true}
+        searchPlaceholder="Search by title, artist or collection..."
+        filterable={true}
+        filterOptions={filterOptions}
+        pageSize={10}
+      />
 
-      {/* Results Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Results ({filteredItems.length})</CardTitle>
-          <CardDescription>Content list matching applied filters</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[50px]"></TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Title</TableHead>
-                <TableHead>Main Artist</TableHead>
-                <TableHead>Collection</TableHead>
-                <TableHead>Publish Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Duration</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredItems.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={item.cover || "/placeholder.svg"} alt={item.title} />
-                      <AvatarFallback>{item.title.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{item.type}</Badge>
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    <div className="flex items-center space-x-2">
-                      <span>{item.title}</span>
-                      {item.hasVideo && (
-                        <Badge variant="secondary" className="text-xs">
-                          Video
-                        </Badge>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>{item.artist}</TableCell>
-                  <TableCell>{item.collection || "-"}</TableCell>
-                  <TableCell>{item.publishDate}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={statusColors[item.status as keyof typeof statusColors]}>
-                      {item.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{item.duration}</TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>
-                          <Eye className="mr-2 h-4 w-4" />
-                          View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit Metadata
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        {item.status === "Admin-blocked" ? (
-                          <DropdownMenuItem>
-                            <ShieldOff className="mr-2 h-4 w-4" />
-                            Unblock
-                          </DropdownMenuItem>
-                        ) : (
-                          <DropdownMenuItem>
-                            <Shield className="mr-2 h-4 w-4" />
-                            Block
-                          </DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <EditMetadataModal
+        open={editModalOpen}
+        onOpenChange={setEditModalOpen}
+        item={selectedItem}
+        onSave={(updatedItem) => {
+          console.log("Saving metadata:", updatedItem)
+          setEditModalOpen(false)
+        }}
+      />
+
+      <BlockContentModal
+        open={blockModalOpen}
+        onOpenChange={setBlockModalOpen}
+        item={selectedItem}
+        onConfirm={(item) => {
+          console.log("Blocking content:", item)
+          setBlockModalOpen(false)
+        }}
+      />
     </div>
   )
 }

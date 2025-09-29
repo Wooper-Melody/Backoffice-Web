@@ -8,7 +8,9 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Search, Download, Eye, Filter, Calendar, User, Activity } from "lucide-react"
+import { Search, Eye, Filter, Calendar, User, Activity } from "lucide-react"
+import { ExportMenu } from "@/components/common/export-menu"
+import { AdvancedFiltersModal } from "@/components/modals/advanced-filters-modal"
 
 const auditLogs = [
   {
@@ -90,6 +92,7 @@ export default function AuditPage() {
   const [severityFilter, setSeverityFilter] = useState("all")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [dateRange, setDateRange] = useState("7d")
+  const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false)
 
   const filteredLogs = auditLogs.filter((log) => {
     const matchesSearch =
@@ -111,11 +114,13 @@ export default function AuditPage() {
           <p className="text-muted-foreground">Track all system activities and administrative actions</p>
         </div>
         <div className="flex items-center space-x-2">
-          <Button variant="outline">
-            <Download className="h-4 w-4 mr-2" />
-            Export Logs
-          </Button>
-          <Button variant="outline">
+          <ExportMenu
+            onExport={(format) => {
+              console.log(`Exporting audit logs as ${format}`)
+              // Implement export logic for audit logs
+            }}
+          />
+          <Button variant="outline" onClick={() => setAdvancedFiltersOpen(true)}>
             <Filter className="h-4 w-4 mr-2" />
             Advanced Filters
           </Button>
@@ -287,6 +292,15 @@ export default function AuditPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <AdvancedFiltersModal
+        open={advancedFiltersOpen}
+        onOpenChange={setAdvancedFiltersOpen}
+        onApplyFilters={(filters) => {
+          console.log("Applying advanced filters:", filters)
+          setAdvancedFiltersOpen(false)
+        }}
+      />
     </div>
   )
 }

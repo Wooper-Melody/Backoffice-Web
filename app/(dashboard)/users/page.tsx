@@ -8,16 +8,6 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -40,6 +30,13 @@ import {
   UserX,
   Crown,
 } from "lucide-react"
+
+import { ExportMenu } from "@/components/common/export-menu"
+import { CreateUserModal } from "@/components/modals/create-user-modal"
+import { EditUserModal } from "@/components/modals/edit-user-modal"
+import { ViewUserModal } from "@/components/modals/view-user-modal"
+import { BlockUserModal } from "@/components/modals/block-user-modal"
+import { UnblockUserModal } from "@/components/modals/unblock-user-modal"
 
 const users = [
   {
@@ -126,7 +123,13 @@ export default function UsersPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [roleFilter, setRoleFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+
+  const [createUserOpen, setCreateUserOpen] = useState(false)
+  const [editUserOpen, setEditUserOpen] = useState(false)
+  const [viewUserOpen, setViewUserOpen] = useState(false)
+  const [blockUserOpen, setBlockUserOpen] = useState(false)
+  const [unblockUserOpen, setUnblockUserOpen] = useState(false)
+  const [selectedUser, setSelectedUser] = useState<any>(null)
 
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
@@ -138,6 +141,34 @@ export default function UsersPage() {
     return matchesSearch && matchesRole && matchesStatus
   })
 
+  const handleViewUser = (user: any) => {
+    setSelectedUser(user)
+    setViewUserOpen(true)
+  }
+
+  const handleEditUser = (user: any) => {
+    setSelectedUser(user)
+    setEditUserOpen(true)
+  }
+
+  const handleBlockUser = (user: any) => {
+    setSelectedUser(user)
+    setBlockUserOpen(true)
+  }
+
+  const handleUnblockUser = (user: any) => {
+    setSelectedUser(user)
+    setUnblockUserOpen(true)
+  }
+
+  const handleStatusToggle = (user: any) => {
+    if (user.status === "active") {
+      handleBlockUser(user)
+    } else {
+      handleUnblockUser(user)
+    }
+  }
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -146,66 +177,18 @@ export default function UsersPage() {
           <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
           <p className="text-muted-foreground">Manage user accounts, roles, and permissions</p>
         </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add User
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create New User</DialogTitle>
-              <DialogDescription>Add a new user account to the platform.</DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="name" className="text-right">
-                  Name
-                </Label>
-                <Input id="name" placeholder="Full name" className="col-span-3" />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="email" className="text-right">
-                  Email
-                </Label>
-                <Input id="email" type="email" placeholder="Email address" className="col-span-3" />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="role" className="text-right">
-                  Role
-                </Label>
-                <Select>
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="user">User</SelectItem>
-                    <SelectItem value="moderator">Moderator</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="subscription" className="text-right">
-                  Subscription
-                </Label>
-                <Select>
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select subscription" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="free">Free</SelectItem>
-                    <SelectItem value="premium">Premium</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="submit">Create User</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <div className="flex items-center space-x-2">
+          <ExportMenu
+            onExport={(format) => {
+              console.log(`Exporting users data as ${format}`)
+              // Implement export logic for users
+            }}
+          />
+          <Button onClick={() => setCreateUserOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add User
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -343,7 +326,7 @@ export default function UsersPage() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-2">
-                      <Switch checked={user.status === "active"} />
+                      <Switch checked={user.status === "active"} onCheckedChange={() => handleStatusToggle(user)} />
                       <Badge variant="outline" className={statusColors[user.status as keyof typeof statusColors]}>
                         {user.status}
                       </Badge>
@@ -374,22 +357,22 @@ export default function UsersPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleViewUser(user)}>
                           <Eye className="mr-2 h-4 w-4" />
                           View Profile
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleEditUser(user)}>
                           <Edit className="mr-2 h-4 w-4" />
                           Edit User
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         {user.status === "blocked" ? (
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleUnblockUser(user)}>
                             <ShieldOff className="mr-2 h-4 w-4" />
                             Unblock User
                           </DropdownMenuItem>
                         ) : (
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleBlockUser(user)}>
                             <Shield className="mr-2 h-4 w-4" />
                             Block User
                           </DropdownMenuItem>
@@ -403,6 +386,47 @@ export default function UsersPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <CreateUserModal
+        open={createUserOpen}
+        onOpenChange={setCreateUserOpen}
+        onCreateUser={(userData) => {
+          console.log("Creating user:", userData)
+          setCreateUserOpen(false)
+        }}
+      />
+
+      <EditUserModal
+        open={editUserOpen}
+        onOpenChange={setEditUserOpen}
+        user={selectedUser}
+        onSaveUser={(userData) => {
+          console.log("Saving user:", userData)
+          setEditUserOpen(false)
+        }}
+      />
+
+      <ViewUserModal open={viewUserOpen} onOpenChange={setViewUserOpen} user={selectedUser} />
+
+      <BlockUserModal
+        open={blockUserOpen}
+        onOpenChange={setBlockUserOpen}
+        user={selectedUser}
+        onConfirm={(user) => {
+          console.log("Blocking user:", user)
+          setBlockUserOpen(false)
+        }}
+      />
+
+      <UnblockUserModal
+        open={unblockUserOpen}
+        onOpenChange={setUnblockUserOpen}
+        user={selectedUser}
+        onConfirm={(user) => {
+          console.log("Unblocking user:", user)
+          setUnblockUserOpen(false)
+        }}
+      />
     </div>
   )
 }

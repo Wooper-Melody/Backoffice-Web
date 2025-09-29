@@ -1,11 +1,16 @@
 "use client"
+
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Clock, Shield, Plus, Edit, Trash2 } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import Link from "next/link"
+import { EditRegionModal } from "@/components/modals/edit-region-modal"
+import { DeleteRegionModal } from "@/components/modals/delete-region-modal"
+import { ScheduleContentModal } from "@/components/modals/schedule-content-modal"
+import { UnblockContentModal } from "@/components/modals/unblock-content-modal"
 
 const availabilityStats = [
   { label: "Active Policies", value: 1247, change: "+23", color: "blue" },
@@ -15,6 +20,13 @@ const availabilityStats = [
 ]
 
 export default function AvailabilityPage() {
+  const [editRegionOpen, setEditRegionOpen] = useState(false)
+  const [deleteRegionOpen, setDeleteRegionOpen] = useState(false)
+  const [scheduleContentOpen, setScheduleContentOpen] = useState(false)
+  const [unblockContentOpen, setUnblockContentOpen] = useState(false)
+  const [selectedRegion, setSelectedRegion] = useState<any>(null)
+  const [selectedContent, setSelectedContent] = useState<any>(null)
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -55,18 +67,30 @@ export default function AvailabilityPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle>Configured Regions</CardTitle>
-                    <CardDescription>
-                      Manage available regions to configure content policies
-                    </CardDescription>
+                    <CardDescription>Manage available regions for content policy configuration</CardDescription>
                   </div>
-                  <Button>
+                  <Button
+                    onClick={() => {
+                      setSelectedRegion(null)
+                      setEditRegionOpen(true)
+                    }}
+                  >
                     <Plus className="h-4 w-4 mr-2" />
                     New Region
                   </Button>
                 </div>
               </CardHeader>
               <CardContent>
-                <RegionsTable />
+                <RegionsTable
+                  onEditRegion={(region) => {
+                    setSelectedRegion(region)
+                    setEditRegionOpen(true)
+                  }}
+                  onDeleteRegion={(region) => {
+                    setSelectedRegion(region)
+                    setDeleteRegionOpen(true)
+                  }}
+                />
               </CardContent>
             </Card>
           </div>
@@ -81,12 +105,10 @@ export default function AvailabilityPage() {
                     <CardTitle>Scheduled Content</CardTitle>
                     <CardDescription>Content with scheduled publication dates</CardDescription>
                   </div>
-                  <Link href="/availability/scheduling/new">
-                    <Button>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Schedule Content
-                    </Button>
-                  </Link>
+                  <Button onClick={() => setScheduleContentOpen(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Schedule Content
+                  </Button>
                 </div>
               </CardHeader>
               <CardContent>
@@ -108,17 +130,65 @@ export default function AvailabilityPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <BlockedContentTable />
+                <BlockedContentTable
+                  onUnblockContent={(content) => {
+                    setSelectedContent(content)
+                    setUnblockContentOpen(true)
+                  }}
+                />
               </CardContent>
             </Card>
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Modals */}
+      <EditRegionModal
+        open={editRegionOpen}
+        onOpenChange={setEditRegionOpen}
+        region={selectedRegion}
+        onSave={(region) => {
+          console.log("Saving region:", region)
+          setEditRegionOpen(false)
+        }}
+      />
+
+      <DeleteRegionModal
+        open={deleteRegionOpen}
+        onOpenChange={setDeleteRegionOpen}
+        region={selectedRegion}
+        onConfirm={(region) => {
+          console.log("Deleting region:", region)
+          setDeleteRegionOpen(false)
+        }}
+      />
+
+      <ScheduleContentModal
+        open={scheduleContentOpen}
+        onOpenChange={setScheduleContentOpen}
+        onSchedule={(scheduleData) => {
+          console.log("Scheduling content:", scheduleData)
+          setScheduleContentOpen(false)
+        }}
+      />
+
+      <UnblockContentModal
+        open={unblockContentOpen}
+        onOpenChange={setUnblockContentOpen}
+        content={selectedContent}
+        onConfirm={(content) => {
+          console.log("Unblocking content:", content)
+          setUnblockContentOpen(false)
+        }}
+      />
     </div>
   )
 }
 
-function RegionsTable() {
+function RegionsTable({
+  onEditRegion,
+  onDeleteRegion,
+}: { onEditRegion: (region: any) => void; onDeleteRegion: (region: any) => void }) {
   const regions = [
     { id: "1", name: "Global", code: "GLOBAL", countries: 195, status: "Active" },
     { id: "2", name: "United States", code: "US", countries: 1, status: "Active" },
@@ -153,11 +223,11 @@ function RegionsTable() {
             </TableCell>
             <TableCell className="text-right">
               <div className="flex items-center justify-end space-x-2">
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" onClick={() => onEditRegion(region)}>
                   <Edit className="h-4 w-4" />
                 </Button>
                 {region.code !== "GLOBAL" && (
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" onClick={() => onDeleteRegion(region)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 )}
@@ -250,7 +320,7 @@ function ScheduledContentTable() {
   )
 }
 
-function BlockedContentTable() {
+function BlockedContentTable({ onUnblockContent }: { onUnblockContent: (content: any) => void }) {
   const blockedContent = [
     {
       id: "1",
@@ -303,7 +373,7 @@ function BlockedContentTable() {
             </TableCell>
             <TableCell>{item.blockedBy}</TableCell>
             <TableCell className="text-right">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={() => onUnblockContent(item)}>
                 <Shield className="h-4 w-4 mr-2" />
                 Unblock
               </Button>
