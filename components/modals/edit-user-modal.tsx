@@ -27,7 +27,7 @@ export function EditUserModal({ open, onOpenChange, user, onSaveUser }: EditUser
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    role: "user",
+    role: "listener",
     subscription: "free",
     country: "",
     notes: "",
@@ -36,7 +36,7 @@ export function EditUserModal({ open, onOpenChange, user, onSaveUser }: EditUser
   useEffect(() => {
     if (user) {
       setFormData({
-        name: user.name || "",
+        name: user.username ?? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim(),
         email: user.email || "",
         role: user.role || "user",
         subscription: user.subscription || "free",
@@ -74,12 +74,12 @@ export function EditUserModal({ open, onOpenChange, user, onSaveUser }: EditUser
           <DialogDescription>Update user account information and permissions</DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-4 py-4">
+        <div className="grid gap-4 py-1">
           <div className="flex items-center space-x-4">
             <Avatar className="h-16 w-16">
-              <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
+              <AvatarImage src={user.profileImageUrl || user.avatar || "/placeholder.svg"} alt={user.username ?? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim()} />
               <AvatarFallback>
-                {user.name
+                {((user.firstName ?? user.username ?? user.name ?? "") as string)
                   .split(" ")
                   .map((n: string) => n[0])
                   .join("")}
@@ -89,7 +89,7 @@ export function EditUserModal({ open, onOpenChange, user, onSaveUser }: EditUser
               <h3 className="font-medium">{user.name}</h3>
               <p className="text-sm text-muted-foreground">User ID: {user.id}</p>
               <p className="text-sm text-muted-foreground">
-                Registered: {new Date(user.registeredAt).toLocaleDateString()}
+                Registered: {new Date(user.createdAt || user.registeredAt).toLocaleDateString()}
               </p>
             </div>
           </div>
@@ -125,24 +125,8 @@ export function EditUserModal({ open, onOpenChange, user, onSaveUser }: EditUser
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="user">User</SelectItem>
-                  <SelectItem value="moderator">Moderator</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="subscription">Subscription</Label>
-              <Select
-                value={formData.subscription}
-                onValueChange={(value) => setFormData((prev) => ({ ...prev, subscription: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="free">Free</SelectItem>
-                  <SelectItem value="premium">Premium</SelectItem>
+                  <SelectItem value="listener">Listener</SelectItem>
+                  <SelectItem value="artist">Artist</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
