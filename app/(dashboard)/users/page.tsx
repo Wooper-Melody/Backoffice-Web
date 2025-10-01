@@ -48,7 +48,6 @@ const users = [
     status: "active",
     lastLogin: "2024-01-20T14:30:00Z",
     registeredAt: "2023-06-15T10:00:00Z",
-    subscription: "premium",
     country: "United States",
     playlists: 45,
     followers: 1200,
@@ -62,7 +61,6 @@ const users = [
     status: "active",
     lastLogin: "2024-01-20T13:15:00Z",
     registeredAt: "2023-03-10T09:30:00Z",
-    subscription: "premium",
     country: "Canada",
     playlists: 23,
     followers: 890,
@@ -76,7 +74,6 @@ const users = [
     status: "active",
     lastLogin: "2024-01-20T15:00:00Z",
     registeredAt: "2023-01-01T00:00:00Z",
-    subscription: "admin",
     country: "United States",
     playlists: 5,
     followers: 0,
@@ -90,7 +87,6 @@ const users = [
     status: "blocked",
     lastLogin: "2024-01-15T10:00:00Z",
     registeredAt: "2023-08-20T14:00:00Z",
-    subscription: "free",
     country: "Germany",
     playlists: 12,
     followers: 45,
@@ -214,10 +210,6 @@ export default function UsersPage() {
             <CardTitle className="text-sm font-medium">Premium Users</CardTitle>
             <Crown className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{users.filter((u) => u.subscription === "premium").length}</div>
-            <p className="text-xs text-muted-foreground">Premium subscribers</p>
-          </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -288,8 +280,8 @@ export default function UsersPage() {
                 <TableHead>User</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Subscription</TableHead>
                 <TableHead>Country</TableHead>
+                <TableHead>Created At</TableHead>
                 <TableHead>Last Login</TableHead>
                 <TableHead>Activity</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -328,15 +320,8 @@ export default function UsersPage() {
                       </Badge>
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="outline"
-                      className={subscriptionColors[user.subscription as keyof typeof subscriptionColors]}
-                    >
-                      {user.subscription}
-                    </Badge>
-                  </TableCell>
                   <TableCell>{user.country}</TableCell>
+                  <TableCell className="text-sm">{new Date(user.registeredAt).toLocaleDateString()}</TableCell>
                   <TableCell className="text-sm">{new Date(user.lastLogin).toLocaleDateString()}</TableCell>
                   <TableCell>
                     <div className="text-sm">
@@ -408,8 +393,8 @@ export default function UsersPage() {
         open={blockUserOpen}
         onOpenChange={setBlockUserOpen}
         user={selectedUser}
-        onConfirm={(user) => {
-          console.log("Blocking user:", user)
+        onConfirm={() => {
+          console.log("Blocking user:", selectedUser)
           setBlockUserOpen(false)
         }}
       />
@@ -418,8 +403,8 @@ export default function UsersPage() {
         open={unblockUserOpen}
         onOpenChange={setUnblockUserOpen}
         user={selectedUser}
-        onConfirm={(user) => {
-          console.log("Unblocking user:", user)
+        onConfirm={() => {
+          console.log("Unblocking user:", selectedUser)
           setUnblockUserOpen(false)
         }}
       />
