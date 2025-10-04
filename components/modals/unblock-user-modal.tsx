@@ -13,30 +13,33 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { CheckCircle } from "lucide-react"
+import type { UserAdminResponse } from "@/types/users"
 
 interface UnblockUserModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  user: {
-    id: string
-    name: string
-    email: string
-  } | null
-  onConfirm: () => void
+  user: UserAdminResponse | null
+  onUnblockUser: (user: UserAdminResponse) => Promise<boolean>
 }
 
-export function UnblockUserModal({ open, onOpenChange, user, onConfirm }: UnblockUserModalProps) {
+export function UnblockUserModal({ open, onOpenChange, user, onUnblockUser }: UnblockUserModalProps) {
   const [isLoading, setIsLoading] = useState(false)
 
   const handleConfirm = async () => {
+    if (!user) return
+    
     setIsLoading(true)
     try {
-      await onConfirm()
-      onOpenChange(false)
+      const success = await onUnblockUser(user)
+      if (success) {
+        onOpenChange(false)
+      }
     } finally {
       setIsLoading(false)
     }
   }
+
+  const displayName = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.username
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -47,7 +50,7 @@ export function UnblockUserModal({ open, onOpenChange, user, onConfirm }: Unbloc
             Unblock User
           </DialogTitle>
           <DialogDescription>
-            Are you sure you want to unblock user <strong>{user?.name}</strong> ({user?.email})?
+            Are you sure you want to unblock user <strong>{displayName}</strong> ({user?.email})?
           </DialogDescription>
         </DialogHeader>
 

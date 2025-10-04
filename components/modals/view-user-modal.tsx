@@ -5,29 +5,40 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { Calendar, MapPin, Music, Smartphone, Clock } from "lucide-react"
+import { Calendar, MapPin, User, Clock, Shield, Users } from "lucide-react"
 import { useState } from "react"
+import type { UserAdminResponse } from "@/types/users"
 
 interface ViewUserModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  user: any
+  user: UserAdminResponse | null
 }
 
 const roleColors = {
-  admin: "bg-purple-500/10 text-purple-500 border-purple-500/20",
-  artist: "bg-orange-500/10 text-orange-500 border-orange-500/20",
-  listener: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-  undefined: "bg-neutral-500/10 text-neutral-500 border-neutral-500/20",
+  ADMIN: "bg-purple-500/10 text-purple-500 border-purple-500/20",
+  ARTIST: "bg-orange-500/10 text-orange-500 border-orange-500/20",
+  LISTENER: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+  UNDECLARED: "bg-neutral-500/10 text-neutral-500 border-neutral-500/20",
 }
 
-const blockedBadge = "bg-red-500/10 text-red-500 border-red-500/20"
-const activeBadge = "bg-green-500/10 text-green-500 border-green-500/20"
+const getRoleDisplayName = (role: string) => {
+  switch (role) {
+    case 'LISTENER': return 'Listener'
+    case 'ARTIST': return 'Artist'
+    case 'ADMIN': return 'Admin'
+    case 'UNDECLARED': return 'Undeclared'
+    default: return role
+  }
+}
 
 export function ViewUserModal({ open, onOpenChange, user }: ViewUserModalProps) {
   if (!user) return null
   const [bioExpanded, setBioExpanded] = useState(false)
-  const MAX_BIO_LENGTH = 50
+  const MAX_BIO_LENGTH = 100
+
+  const blockedBadge = "bg-red-500/10 text-red-500 border-red-500/20"
+  const activeBadge = "bg-green-500/10 text-green-500 border-green-500/20"
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -35,24 +46,32 @@ export function ViewUserModal({ open, onOpenChange, user }: ViewUserModalProps) 
         <div className="space-y-4">
           {/* Header */}
           <div className="flex items-center space-x-4">
-            <Avatar className="h-20 w-20">
-              <AvatarImage src={user.profileImageUrl || user.avatar || "/placeholder.svg"} alt={user.username || user.email} />
+            <Avatar className="h-15 w-15">
+              <AvatarImage src={user.profilePictureUrl || "/placeholder.svg"} alt={user.username || user.email} />
               <AvatarFallback className="text-lg">
-                {(user.firstName || user.username || user.name || "")
+                {(user.firstName || user.username || "")
                   .split(" ")
                   .map((n: string) => n[0])
                   .join("")}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <h3 className="text-xl font-semibold">{user.username ?? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim()}</h3>
+              <h3 className="text-xl font-semibold">
+                {[user.firstName, user.lastName].filter(Boolean).join(' ') || user.username}
+              </h3>
               <div className="flex items-center space-x-2 mt-2">
                 <Badge variant="outline" className={roleColors[user.role as keyof typeof roleColors]}>
-                  {user.role.toLowerCase()}
+                  {getRoleDisplayName(user.role)}
                 </Badge>
                 <Badge variant="outline" className={user.isBlocked ? blockedBadge : activeBadge}>
-                  {user.isBlocked ? "blocked" : "active"}
+                  {user.isBlocked ? "Blocked" : "Active"}
                 </Badge>
+                {user.contentFilterEnabled && (
+                  <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20">
+                    <Shield className="h-3 w-3 mr-1" />
+                    Filter Enabled
+                  </Badge>
+                )}
               </div>
               {user.bio && (
                 <p className="mt-2 text-sm text-muted-foreground">
@@ -80,7 +99,7 @@ export function ViewUserModal({ open, onOpenChange, user }: ViewUserModalProps) 
               <CardHeader>
                 <CardTitle className="text-sm font-medium flex items-center">
                   <Calendar className="h-4 w-4 mr-2" />
-                  Account Details
+                  Account Information
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
@@ -97,16 +116,14 @@ export function ViewUserModal({ open, onOpenChange, user }: ViewUserModalProps) 
                   <p className="text-sm">{user.username}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Created At</p>
-                  <p className="text-sm">{new Date(user.createdAt).toLocaleString('en-US')}</p>
+                  <p className="text-sm text-muted-foreground">Registration Date</p>
+                  <p className="text-sm">{new Date(user.createdAt).toLocaleString('es-ES')}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Last Login</p>
-                  <p className="text-sm">{user.lastLogin ? new Date(user.lastLogin).toLocaleString('en-US') : "-"}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Content Filter</p>
-                  <p className="text-sm">{user.contentFilter ? "Enabled" : "Disabled"}</p>
+                  <p className="text-sm">
+                    {user.lastLogin ? new Date(user.lastLogin).toLocaleString('es-ES') : "Never"}
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -114,26 +131,28 @@ export function ViewUserModal({ open, onOpenChange, user }: ViewUserModalProps) 
             <Card className="gap-4">
               <CardHeader>
                 <CardTitle className="text-sm font-medium flex items-center">
-                  <MapPin className="h-4 w-4 mr-2" />
-                  Contact
+                  <User className="h-4 w-4 mr-2" />
+                  Personal Information
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 <div>
-                  <p className="text-sm text-muted-foreground">Full name</p>
-                  <p className="text-sm">{[user.firstName, user.lastName].filter(Boolean).join(" ")}</p>
+                  <p className="text-sm text-muted-foreground">Full Name</p>
+                  <p className="text-sm">
+                    {[user.firstName, user.lastName].filter(Boolean).join(" ") || "-"}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Phone</p>
-                  <p className="text-sm">{user.phone ?? "-"}</p>
+                  <p className="text-sm text-muted-foreground">Phone Number</p>
+                  <p className="text-sm">{user.phoneNumber || "-"}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Address</p>
-                  <p className="text-sm">{user.address ?? "-"}</p>
+                  <p className="text-sm">{user.address || "-"}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Country</p>
-                  <p className="text-sm">{user.country}</p>
+                  <p className="text-sm text-muted-foreground">Content Filter</p>
+                  <p className="text-sm">{user.contentFilterEnabled ? "Enabled" : "Disabled"}</p>
                 </div>
               </CardContent>
             </Card>
@@ -142,27 +161,19 @@ export function ViewUserModal({ open, onOpenChange, user }: ViewUserModalProps) 
           <Card>
             <CardHeader>
               <CardTitle className="text-sm font-medium flex items-center">
-                <Music className="h-4 w-4 mr-2" />
-                Activity
+                <Users className="h-4 w-4 mr-2" />
+                Social Activity
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold">{user.followersCount ?? user.followers ?? 0}</div>
+                  <div className="text-2xl font-bold">{user.followersCount}</div>
                   <p className="text-sm text-muted-foreground">Followers</p>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold">{user.followingCount ?? 0}</div>
+                  <div className="text-2xl font-bold">{user.followingCount}</div>
                   <p className="text-sm text-muted-foreground">Following</p>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold">{user.likedSongs ?? 0}</div>
-                  <p className="text-sm text-muted-foreground">Liked songs</p>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold">{user.playlists ?? 0}</div>
-                  <p className="text-sm text-muted-foreground">Playlists</p>
                 </div>
               </div>
             </CardContent>

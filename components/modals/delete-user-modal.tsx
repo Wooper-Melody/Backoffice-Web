@@ -15,14 +15,14 @@ import { Button } from "@/components/ui/button"
 import { AlertTriangle } from "lucide-react"
 import type { UserAdminResponse } from "@/types/users"
 
-interface BlockUserModalProps {
+interface DeleteUserModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   user: UserAdminResponse | null
-  onBlockUser: (user: UserAdminResponse) => Promise<boolean>
+  onDeleteUser: (user: UserAdminResponse) => Promise<boolean>
 }
 
-export function BlockUserModal({ open, onOpenChange, user, onBlockUser }: BlockUserModalProps) {
+export function DeleteUserModal({ open, onOpenChange, user, onDeleteUser }: DeleteUserModalProps) {
   const [isLoading, setIsLoading] = useState(false)
 
   const handleConfirm = async () => {
@@ -30,7 +30,7 @@ export function BlockUserModal({ open, onOpenChange, user, onBlockUser }: BlockU
     
     setIsLoading(true)
     try {
-      const success = await onBlockUser(user)
+      const success = await onDeleteUser(user)
       if (success) {
         onOpenChange(false)
       }
@@ -47,18 +47,20 @@ export function BlockUserModal({ open, onOpenChange, user, onBlockUser }: BlockU
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-destructive" />
-            Block User
+            Delete User
           </DialogTitle>
           <DialogDescription>
-            Are you sure you want to block user <strong>{displayName}</strong> ({user?.email})?
+            Are you sure you want to permanently delete the user <strong>{displayName}</strong> ({user?.email})?
             <br />
             <br />
-            This action will restrict their access to the platform and can be reverted later.
+            <span className="text-destructive font-medium">
+              This action cannot be undone. All user data will be permanently removed from the platform.
+            </span>
           </DialogDescription>
         </DialogHeader>
         
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
             Cancel
           </Button>
           <Button 
@@ -67,7 +69,7 @@ export function BlockUserModal({ open, onOpenChange, user, onBlockUser }: BlockU
             onClick={handleConfirm}
             disabled={isLoading}
           >
-            {isLoading ? "Blocking..." : "Confirm Block"}
+            {isLoading ? "Deleting..." : "Delete User"}
           </Button>
         </DialogFooter>
       </DialogContent>
