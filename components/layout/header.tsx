@@ -45,9 +45,9 @@ const mockSearchResults = [
   },
   {
     id: "4",
-    type: "user",
+    type: "listener",
     title: "john.doe@example.com",
-    description: "Premium User",
+    description: "Listener",
     icon: User,
   },
 ]
@@ -115,30 +115,32 @@ export function Header() {
     // Navigate based on result type
     switch (result.type) {
       case "song":
+        router.push(`/catalog/[id]?id=${result.id}`)
+        break
       case "collection":
-        window.location.href = `/state-management?id=${result.id}`
+        router.push(`/catalog/[id]?id=${result.id}`)
         break
       case "artist":
-        window.location.href = `/catalog?artist=${encodeURIComponent(result.title)}`
+        router.push(`/users?search=${encodeURIComponent(result.title)}`)
         break
-      case "user":
-        window.location.href = `/users?search=${encodeURIComponent(result.title)}`
+      case "listener":
+        router.push(`/users?search=${encodeURIComponent(result.title)}`)
         break
       default:
-        window.location.href = `/catalog?search=${encodeURIComponent(result.title)}`
+        router.push(`/catalog?search=${encodeURIComponent(result.title)}`)
     }
   }
 
   const getTypeColor = (type: string) => {
     switch (type) {
       case "song":
-        return "bg-blue-500/10 text-blue-500 border-blue-500/20"
+        return "bg-blue-300/10 text-blue-300 border-blue-300/20"
       case "artist":
-        return "bg-green-500/10 text-green-500 border-green-500/20"
-      case "collection":
-        return "bg-purple-500/10 text-purple-500 border-purple-500/20"
-      case "user":
         return "bg-orange-500/10 text-orange-500 border-orange-500/20"
+      case "collection":
+        return "bg-green-300/10 text-green-300 border-green-300/20"
+      case "listener":
+        return "bg-blue-500/10 text-blue-500 border-blue-500/20"
       default:
         return "bg-gray-500/10 text-gray-500 border-gray-500/20"
     }

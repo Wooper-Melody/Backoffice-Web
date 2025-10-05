@@ -4,6 +4,7 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { SWRProvider } from "@/components/providers/swr-provider"
 import { AuthProvider } from "@/components/auth/auth-provider"
+import { Toaster } from "@/components/ui/toaster"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -24,7 +25,10 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} dark`}>
       <body className="font-sans antialiased">
         <AuthProvider>
-          <SWRProvider>{children}</SWRProvider>
+          <SWRProvider>
+            {children}
+            <Toaster />
+          </SWRProvider>
         </AuthProvider>
       </body>
     </html>

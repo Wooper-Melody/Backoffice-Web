@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAuth } from '@/components/auth/auth-provider'
@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Music, Eye, EyeOff, Loader2 } from "lucide-react"
+import { Music, Eye, EyeOff, Loader2, AlertTriangle } from "lucide-react"
+import { validateLoginForm, type ValidationResult } from "@/lib/validation"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -18,11 +19,29 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+  const [validation, setValidation] = useState<ValidationResult>({ isValid: true, errors: [] })
+  const [touched, setTouched] = useState<Record<string, boolean>>({})
   const router = useRouter()
   const { login } = useAuth()
 
+  // Validate form whenever email or password changes
+  useEffect(() => {
+    const result = validateLoginForm({ email, password })
+    setValidation(result)
+  }, [email, password])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Validate form before submission
+    const validationResult = validateLoginForm({ email, password })
+    
+    if (!validationResult.isValid) {
+      // Mark all fields as touched to show validation errors
+      setTouched({ email: true, password: true })
+      return
+    }
+
     setIsLoading(true)
     setError("")
     console.log('Attempting login with email:', email);
@@ -39,17 +58,25 @@ export default function LoginPage() {
       const data = await response.json()
 
       if (response.ok) {
-        // Use auth context so provider updates app state and performs navigation
-        try {
-          login(data.token, data.user)
-        } catch (err) {
-          // Fallback: store token and navigate
-          sessionStorage.setItem("admin_token", data.token)
-          sessionStorage.setItem("admin_user", JSON.stringify(data.user))
-          router.push("/catalog")
+        // Check if we received both access token and refresh token
+        if (data.token && data.refreshToken && data.user && data.expiresIn) {
+          // Use auth context so provider updates app state and performs navigation
+          try {
+            login(data.token, data.refreshToken, data.user, data.expiresIn)
+          } catch (err) {
+            // Fallback: store tokens and navigate
+            const expiresAt = Date.now() + (data.expiresIn * 1000)
+            sessionStorage.setItem("admin_token", data.token)
+            sessionStorage.setItem("admin_refresh_token", data.refreshToken)
+            sessionStorage.setItem("admin_user", JSON.stringify(data.user))
+            sessionStorage.setItem("admin_expires_at", expiresAt.toString())
+            router.push("/catalog")
+          }
+        } else {
+          setError("Invalid response from server - missing required tokens or expiration")
         }
       } else {
-        setError(data.message || "Error while logging in")
+        setError(data.detail || data.message || "Invalid credentials")
       }
     } catch (error) {
       console.error("Login error:", error)
@@ -58,6 +85,24 @@ export default function LoginPage() {
       setIsLoading(false)
     }
   }
+
+  const handleFieldChange = (field: string, value: string) => {
+    if (field === 'email') {
+      setEmail(value)
+    } else if (field === 'password') {
+      setPassword(value)
+    }
+    setTouched((prev) => ({ ...prev, [field]: true }))
+    // Clear server error when user starts typing
+    if (error) setError("")
+  }
+
+  const getFieldError = (fieldName: string) => {
+    if (!touched[fieldName]) return null
+    return validation.errors.find(error => error.field === fieldName)?.message
+  }
+
+  const hasVisibleErrors = validation.errors.some(error => touched[error.field])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -88,10 +133,14 @@ export default function LoginPage() {
                 type="email"
                 placeholder="admin@melody.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => handleFieldChange('email', e.target.value)}
                 required
                 disabled={isLoading}
+                className={getFieldError('email') ? 'border-red-500' : ''}
               />
+              {getFieldError('email') && (
+                <p className="text-sm text-red-500">{getFieldError('email')}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -104,9 +153,10 @@ export default function LoginPage() {
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => handleFieldChange('password', e.target.value)}
                   required
                   disabled={isLoading}
+                  className={getFieldError('password') ? 'border-red-500' : ''}
                 />
                 <Button
                   type="button"
@@ -119,9 +169,25 @@ export default function LoginPage() {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               </div>
+              {getFieldError('password') && (
+                <p className="text-sm text-red-500">{getFieldError('password')}</p>
+              )}
             </div>
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            {hasVisibleErrors && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  Please fix the errors in the form to continue.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={isLoading || !validation.isValid}
+            >
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

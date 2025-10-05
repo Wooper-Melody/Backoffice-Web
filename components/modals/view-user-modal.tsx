@@ -5,179 +5,175 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { Calendar, MapPin, Music, Smartphone, Clock } from "lucide-react"
+import { Calendar, MapPin, User, Clock, Shield, Users } from "lucide-react"
+import { useState } from "react"
+import type { UserAdminResponse } from "@/types/users"
 
 interface ViewUserModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  user: any
+  user: UserAdminResponse | null
 }
 
 const roleColors = {
-  admin: "bg-red-500/10 text-red-500 border-red-500/20",
-  moderator: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-  user: "bg-green-500/10 text-green-500 border-green-500/20",
+  ADMIN: "bg-purple-500/10 text-purple-500 border-purple-500/20",
+  ARTIST: "bg-orange-500/10 text-orange-500 border-orange-500/20",
+  LISTENER: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+  UNDECLARED: "bg-neutral-500/10 text-neutral-500 border-neutral-500/20",
 }
 
-const statusColors = {
-  active: "bg-green-500/10 text-green-500 border-green-500/20",
-  blocked: "bg-red-500/10 text-red-500 border-red-500/20",
-  pending: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
-}
-
-const subscriptionColors = {
-  free: "bg-gray-500/10 text-gray-500 border-gray-500/20",
-  premium: "bg-purple-500/10 text-purple-500 border-purple-500/20",
-  admin: "bg-orange-500/10 text-orange-500 border-orange-500/20",
+const getRoleDisplayName = (role: string) => {
+  switch (role) {
+    case 'LISTENER': return 'Listener'
+    case 'ARTIST': return 'Artist'
+    case 'ADMIN': return 'Admin'
+    case 'UNDECLARED': return 'Undeclared'
+    default: return role
+  }
 }
 
 export function ViewUserModal({ open, onOpenChange, user }: ViewUserModalProps) {
   if (!user) return null
+  const [bioExpanded, setBioExpanded] = useState(false)
+  const MAX_BIO_LENGTH = 100
+
+  const blockedBadge = "bg-red-500/10 text-red-500 border-red-500/20"
+  const activeBadge = "bg-green-500/10 text-green-500 border-green-500/20"
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>User Profile</DialogTitle>
-          <DialogDescription>Detailed information about the user account</DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-6">
-          {/* User Header */}
+        <div className="space-y-4">
+          {/* Header */}
           <div className="flex items-center space-x-4">
-            <Avatar className="h-20 w-20">
-              <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
+            <Avatar className="h-15 w-15">
+              <AvatarImage src={user.profilePictureUrl || "/placeholder-user.jpg"} alt={user.username || user.email} />
               <AvatarFallback className="text-lg">
-                {user.name
+                {(user.firstName || user.username || "")
                   .split(" ")
                   .map((n: string) => n[0])
                   .join("")}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <h3 className="text-xl font-semibold">{user.name}</h3>
-              <p className="text-muted-foreground">{user.email}</p>
+              <h3 className="text-xl font-semibold">
+                {[user.firstName, user.lastName].filter(Boolean).join(' ') || user.username}
+              </h3>
               <div className="flex items-center space-x-2 mt-2">
                 <Badge variant="outline" className={roleColors[user.role as keyof typeof roleColors]}>
-                  {user.role}
+                  {getRoleDisplayName(user.role)}
                 </Badge>
-                <Badge variant="outline" className={statusColors[user.status as keyof typeof statusColors]}>
-                  {user.status}
+                <Badge variant="outline" className={user.isBlocked ? blockedBadge : activeBadge}>
+                  {user.isBlocked ? "Blocked" : "Active"}
                 </Badge>
-                <Badge
-                  variant="outline"
-                  className={subscriptionColors[user.subscription as keyof typeof subscriptionColors]}
-                >
-                  {user.subscription}
-                </Badge>
+                {user.contentFilterEnabled && (
+                  <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20">
+                    <Shield className="h-3 w-3 mr-1" />
+                    Filter Enabled
+                  </Badge>
+                )}
               </div>
+              {user.bio && (
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {bioExpanded || user.bio.length <= MAX_BIO_LENGTH
+                    ? user.bio
+                    : `${user.bio.slice(0, MAX_BIO_LENGTH).trimEnd()}...`}
+                  {user.bio.length > MAX_BIO_LENGTH && (
+                    <button
+                      type="button"
+                      onClick={() => setBioExpanded((v) => !v)}
+                      className="ml-2 text-xs font-medium text-primary hover:underline"
+                    >
+                      {bioExpanded ? "Show less" : "Read more"}
+                    </button>
+                  )}
+                </p>
+              )}
             </div>
           </div>
 
           <Separator />
 
-          {/* Account Information */}
-          <div className="grid grid-cols-2 gap-4">
-            <Card>
-              <CardHeader className="pb-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <Card className="gap-4">
+              <CardHeader>
                 <CardTitle className="text-sm font-medium flex items-center">
                   <Calendar className="h-4 w-4 mr-2" />
-                  Account Details
+                  Account Information
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 <div>
-                  <p className="text-sm text-muted-foreground">User ID</p>
+                  <p className="text-sm text-muted-foreground">ID</p>
                   <p className="font-mono text-sm">{user.id}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Registered</p>
-                  <p className="text-sm">{new Date(user.registeredAt).toLocaleDateString('en-US')}</p>
+                  <p className="text-sm text-muted-foreground">Email</p>
+                  <p className="text-sm">{user.email}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Username</p>
+                  <p className="text-sm">{user.username}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Registration Date</p>
+                  <p className="text-sm">{new Date(user.createdAt).toLocaleString('es-ES')}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Last Login</p>
-                  <p className="text-sm">{new Date(user.lastLogin).toLocaleDateString('en-US')}</p>
+                  <p className="text-sm">
+                    {user.lastLogin ? new Date(user.lastLogin).toLocaleString('es-ES') : "Never"}
+                  </p>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="pb-3">
+            <Card className="gap-4">
+              <CardHeader>
                 <CardTitle className="text-sm font-medium flex items-center">
-                  <MapPin className="h-4 w-4 mr-2" />
-                  Location & Devices
+                  <User className="h-4 w-4 mr-2" />
+                  Personal Information
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 <div>
-                  <p className="text-sm text-muted-foreground">Country</p>
-                  <p className="text-sm">{user.country}</p>
+                  <p className="text-sm text-muted-foreground">Full Name</p>
+                  <p className="text-sm">
+                    {[user.firstName, user.lastName].filter(Boolean).join(" ") || "-"}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Active Devices</p>
-                  <p className="text-sm flex items-center">
-                    <Smartphone className="h-3 w-3 mr-1" />
-                    {user.devices} devices
-                  </p>
+                  <p className="text-sm text-muted-foreground">Phone Number</p>
+                  <p className="text-sm">{user.phoneNumber || "-"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Address</p>
+                  <p className="text-sm">{user.address || "-"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Content Filter</p>
+                  <p className="text-sm">{user.contentFilterEnabled ? "Enabled" : "Disabled"}</p>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Activity Statistics */}
           <Card>
             <CardHeader>
               <CardTitle className="text-sm font-medium flex items-center">
-                <Music className="h-4 w-4 mr-2" />
-                Activity Statistics
+                <Users className="h-4 w-4 mr-2" />
+                Social Activity
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold">{user.playlists}</div>
-                  <p className="text-sm text-muted-foreground">Playlists</p>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold">{user.followers}</div>
+                  <div className="text-2xl font-bold">{user.followersCount}</div>
                   <p className="text-sm text-muted-foreground">Followers</p>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold">{user.devices}</div>
-                  <p className="text-sm text-muted-foreground">Devices</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Recent Activity */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium flex items-center">
-                <Clock className="h-4 w-4 mr-2" />
-                Recent Activity
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center text-sm">
-                  <span>Last login</span>
-                  <span className="text-muted-foreground">{new Date(user.lastLogin).toLocaleString('en-US')}</span>
-                </div>
-                <div className="flex justify-between items-center text-sm">
-                  <span>Account status</span>
-                  <Badge variant="outline" className={statusColors[user.status as keyof typeof statusColors]}>
-                    {user.status}
-                  </Badge>
-                </div>
-                <div className="flex justify-between items-center text-sm">
-                  <span>Subscription type</span>
-                  <Badge
-                    variant="outline"
-                    className={subscriptionColors[user.subscription as keyof typeof subscriptionColors]}
-                  >
-                    {user.subscription}
-                  </Badge>
+                  <div className="text-2xl font-bold">{user.followingCount}</div>
+                  <p className="text-sm text-muted-foreground">Following</p>
                 </div>
               </div>
             </CardContent>

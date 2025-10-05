@@ -23,15 +23,28 @@ const API_BASE_URL = getApiBaseUrl()
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json()
+    const { refreshToken } = await request.json()
 
-    // Forward the login request to the actual backend API
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    if (!refreshToken) {
+      return NextResponse.json(
+        { 
+          type: "about:blank",
+          title: "Bad Request", 
+          status: 400,
+          detail: "Refresh token is required",
+          instance: "/auth/refresh"
+        }, 
+        { status: 400 }
+      )
+    }
+
+    // Forward the refresh request to the actual backend API
+    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ refreshToken })
     })
 
     const data = await response.json()
@@ -44,14 +57,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(data, { status: response.status })
     }
   } catch (error) {
-    console.error("Login proxy error:", error)
+    console.error("Refresh token proxy error:", error)
     return NextResponse.json(
       { 
         type: "about:blank",
         title: "Internal Server Error", 
         status: 500,
         detail: "Error interno del servidor",
-        instance: "/auth/login"
+        instance: "/auth/refresh"
       }, 
       { status: 500 }
     )
