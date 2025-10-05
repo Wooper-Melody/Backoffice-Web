@@ -95,7 +95,7 @@ export interface ErrorResponse {
 export interface UsersFilters {
   search?: string
   role?: string
-  status?: string
+  status?: string // Frontend uses 'all', 'blocked', 'active' - mapped to isBlocked boolean in API
   page?: number
   size?: number
 }

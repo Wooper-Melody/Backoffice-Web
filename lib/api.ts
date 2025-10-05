@@ -432,8 +432,12 @@ class ApiClient {
     if (filters?.page !== undefined) searchParams.set("page", filters.page.toString())
     if (filters?.size !== undefined) searchParams.set("size", filters.size.toString())
     if (filters?.search) searchParams.set("search", filters.search)
-    if (filters?.role) searchParams.set("role", filters.role)
-    if (filters?.status) searchParams.set("status", filters.status)
+    if (filters?.role && filters.role !== "all") searchParams.set("role", filters.role)
+    if (filters?.status && filters.status !== "all") {
+      // Map frontend status values to API isBlocked boolean
+      const isBlocked = filters.status === "blocked"
+      searchParams.set("isBlocked", isBlocked.toString())
+    }
 
     const response: Page<UserAdminResponse> = await this.request(`/users/admin?${searchParams}`)
     
