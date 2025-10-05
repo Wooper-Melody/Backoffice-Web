@@ -311,7 +311,7 @@ export default function UsersPage() {
             {mostRecentUser ? (
               <div className="flex items-center space-x-3">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={mostRecentUser.profilePictureUrl || "/placeholder.svg"} alt={mostRecentUser.username ?? `${mostRecentUser.firstName ?? ''} ${mostRecentUser.lastName ?? ''}`.trim()} />
+                  <AvatarImage src={mostRecentUser.profilePictureUrl || "/placeholder-user.jpg"} alt={mostRecentUser.username ?? `${mostRecentUser.firstName ?? ''} ${mostRecentUser.lastName ?? ''}`.trim()} />
                   <AvatarFallback>
                     {((mostRecentUser.firstName ?? mostRecentUser.username ?? '') as string)
                       .split(' ')
@@ -436,7 +436,7 @@ export default function UsersPage() {
                     <TableCell>
                       <div className="flex items-center space-x-3">
                         <Avatar className="h-8 w-8">
-                          <AvatarImage src={user.profilePictureUrl || "/placeholder.svg"} alt={user.username ?? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim()} />
+                          <AvatarImage src={user.profilePictureUrl || "/placeholder-user.jpg"} alt={user.username ?? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim()} />
                           <AvatarFallback>
                             {((user.firstName ?? user.username ?? "") as string)
                               .split(" ")

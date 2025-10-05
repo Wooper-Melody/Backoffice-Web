@@ -140,7 +140,7 @@ export function EditUserModal({ open, onOpenChange, user, onSaveUser }: EditUser
           
           <div className="flex items-center space-x-4">
             <Avatar className="h-16 w-16">
-              <AvatarImage src={user.profilePictureUrl || "/placeholder.svg"} alt={user.username ?? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim()} />
+              <AvatarImage src={user.profilePictureUrl || "/placeholder-user.jpg"} alt={user.username ?? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim()} />
               <AvatarFallback>
                 {((user.firstName ?? user.username ?? "") as string)
                   .split(" ")

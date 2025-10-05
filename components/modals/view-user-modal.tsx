@@ -47,7 +47,7 @@ export function ViewUserModal({ open, onOpenChange, user }: ViewUserModalProps) 
           {/* Header */}
           <div className="flex items-center space-x-4">
             <Avatar className="h-15 w-15">
-              <AvatarImage src={user.profilePictureUrl || "/placeholder.svg"} alt={user.username || user.email} />
+              <AvatarImage src={user.profilePictureUrl || "/placeholder-user.jpg"} alt={user.username || user.email} />
               <AvatarFallback className="text-lg">
                 {(user.firstName || user.username || "")
                   .split(" ")
