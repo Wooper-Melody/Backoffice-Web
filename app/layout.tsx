@@ -16,12 +16,11 @@ export const metadata: Metadata = {
   description: "Admin panel for Melody music streaming platform",
   keywords: ["melody", "admin", "backoffice", "music", "streaming", "management"],
   authors: [
-    { name: 'Wooper Melody', url: 'https://example.com' }
+    { name: 'Wooper Melody' }
   ],
   creator: 'Wooper Melody',
   publisher: 'Wooper Melody',
   applicationName: 'Melody Admin',
-  manifest: '/site.webmanifest',
   icons: {
     icon: [
       { url: '/abstract-soundscape.png', type: 'image/png' },
