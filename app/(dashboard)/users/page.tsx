@@ -430,7 +430,7 @@ export default function UsersPage() {
                   <TableHead>Status</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead>Last Login</TableHead>
-                  <TableHead>Activity</TableHead>
+                  <TableHead>Social</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -487,10 +487,23 @@ export default function UsersPage() {
                       {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('es-ES') : '-'}
                     </TableCell>
                     <TableCell>
-                      <div className="text-sm">
-                        <div>{user.followersCount} followers</div>
-                        <div className="text-muted-foreground">{user.followingCount} following</div>
-                      </div>
+                      {user.role === 'ADMIN' ? (
+                        <div className="flex items-center justify-left">
+                          <Badge
+                            variant="outline"
+                            className="text-xs px-2 py-0.5"
+                            title="Not applicable for Admins"
+                            aria-label="Not applicable for Admins"
+                          >
+                            N/A
+                          </Badge>
+                        </div>
+                      ) : (
+                        <div className="text-sm">
+                          <div>{user.followersCount} followers</div>
+                          <div className="text-muted-foreground">{user.followingCount} following</div>
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
