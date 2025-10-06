@@ -37,7 +37,6 @@ export function EditUserModal({ open, onOpenChange, user, onSaveUser }: EditUser
     lastName: "",
     phoneNumber: "",
     address: "",
-    profilePictureUrl: "",
     biography: "",
     contentFilterEnabled: true,
     isBlocked: false,
@@ -60,7 +59,6 @@ export function EditUserModal({ open, onOpenChange, user, onSaveUser }: EditUser
         lastName: user.lastName || "",
         phoneNumber: user.phoneNumber || "",
         address: user.address || "",
-        profilePictureUrl: user.profilePictureUrl || "",
         biography: user.bio || "",
         contentFilterEnabled: user.contentFilterEnabled ?? true,
         isBlocked: user.isBlocked ?? false,
@@ -83,7 +81,7 @@ export function EditUserModal({ open, onOpenChange, user, onSaveUser }: EditUser
     
     if (!validationResult.isValid) {
       // Mark all fields as touched to show validation errors
-      const allFields = ['email', 'username', 'firstName', 'lastName', 'phoneNumber', 'address', 'profilePictureUrl', 'biography']
+      const allFields = ['email', 'username', 'firstName', 'lastName', 'phoneNumber', 'address', 'biography']
       const newTouched = allFields.reduce((acc, field) => ({ ...acc, [field]: true }), {})
       setTouched(newTouched)
       return
@@ -231,33 +229,18 @@ export function EditUserModal({ open, onOpenChange, user, onSaveUser }: EditUser
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="phoneNumber">Phone Number</Label>
-              <Input
-                id="phoneNumber"
-                value={formData.phoneNumber || ""}
-                onChange={(e) => handleFieldChange('phoneNumber', e.target.value)}
-                placeholder="+54 11 1234-5678"
-                className={getFieldError('phoneNumber') ? 'border-red-500' : ''}
-              />
-              {getFieldError('phoneNumber') && (
-                <p className="text-sm text-red-500">{getFieldError('phoneNumber')}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="profilePictureUrl">Profile Picture URL</Label>
-              <Input
-                id="profilePictureUrl"
-                value={formData.profilePictureUrl || ""}
-                onChange={(e) => handleFieldChange('profilePictureUrl', e.target.value)}
-                placeholder="https://example.com/avatar.jpg"
-                className={getFieldError('profilePictureUrl') ? 'border-red-500' : ''}
-              />
-              {getFieldError('profilePictureUrl') && (
-                <p className="text-sm text-red-500">{getFieldError('profilePictureUrl')}</p>
-              )}
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="phoneNumber">Phone Number</Label>
+            <Input
+              id="phoneNumber"
+              value={formData.phoneNumber || ""}
+              onChange={(e) => handleFieldChange('phoneNumber', e.target.value)}
+              placeholder="+54 11 1234-5678"
+              className={getFieldError('phoneNumber') ? 'border-red-500' : ''}
+            />
+            {getFieldError('phoneNumber') && (
+              <p className="text-sm text-red-500">{getFieldError('phoneNumber')}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -290,16 +273,18 @@ export function EditUserModal({ open, onOpenChange, user, onSaveUser }: EditUser
           </div>
 
           <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="contentFilter"
-                checked={formData.contentFilterEnabled}
-                onCheckedChange={(checked) => 
-                  setFormData((prev) => ({ ...prev, contentFilterEnabled: checked }))
-                }
-              />
-              <Label htmlFor="contentFilter">Content filter enabled</Label>
-            </div>
+            {user.role !== 'ADMIN' && (
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="contentFilter"
+                  checked={formData.contentFilterEnabled}
+                  onCheckedChange={(checked) => 
+                    setFormData((prev) => ({ ...prev, contentFilterEnabled: checked }))
+                  }
+                />
+                <Label htmlFor="contentFilter">Content filter enabled</Label>
+              </div>
+            )}
 
             {!isCurrentUser && (
               <div className="flex items-center space-x-2">
@@ -313,10 +298,6 @@ export function EditUserModal({ open, onOpenChange, user, onSaveUser }: EditUser
                 <Label htmlFor="isBlocked">User blocked</Label>
               </div>
             )}
-          </div>
-
-          <div className="text-sm text-muted-foreground">
-            <strong>Note:</strong> User role cannot be modified from this screen.
           </div>
         </div>
 
