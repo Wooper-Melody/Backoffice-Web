@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Calendar, MapPin, User, Clock, Shield, Users } from "lucide-react"
 import { useState } from "react"
+import { useAuth } from "@/components/auth/auth-provider"
 import type { UserAdminResponse } from "@/types/users"
 
 interface ViewUserModalProps {
@@ -34,6 +35,8 @@ const getRoleDisplayName = (role: string) => {
 
 export function ViewUserModal({ open, onOpenChange, user }: ViewUserModalProps) {
   if (!user) return null
+  const { user: sessionUser } = useAuth()
+  const isCurrentUser = sessionUser?.id === user.id
   const [bioExpanded, setBioExpanded] = useState(false)
   const MAX_BIO_LENGTH = 100
 
@@ -56,8 +59,11 @@ export function ViewUserModal({ open, onOpenChange, user }: ViewUserModalProps) 
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <h3 className="text-xl font-semibold">
-                {[user.firstName, user.lastName].filter(Boolean).join(' ') || user.username}
+              <h3 className="text-xl font-semibold flex items-center">
+                <span>{[user.firstName, user.lastName].filter(Boolean).join(' ') || user.username}</span>
+                {isCurrentUser && (
+                  <span className="ml-2 text-sm font-normal text-muted-foreground">(You)</span>
+                )}
               </h3>
               <div className="flex items-center space-x-2 mt-2">
                 <Badge variant="outline" className={roleColors[user.role as keyof typeof roleColors]}>
@@ -158,26 +164,28 @@ export function ViewUserModal({ open, onOpenChange, user }: ViewUserModalProps) 
             </Card>
           </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium flex items-center">
-                <Users className="h-4 w-4 mr-2" />
-                Social Activity
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold">{user.followersCount}</div>
-                  <p className="text-sm text-muted-foreground">Followers</p>
+          {user.role !== 'ADMIN' && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium flex items-center">
+                  <Users className="h-4 w-4 mr-2" />
+                  Social Activity
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold">{user.followersCount}</div>
+                    <p className="text-sm text-muted-foreground">Followers</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold">{user.followingCount}</div>
+                    <p className="text-sm text-muted-foreground">Following</p>
+                  </div>
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold">{user.followingCount}</div>
-                  <p className="text-sm text-muted-foreground">Following</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </DialogContent>
     </Dialog>
