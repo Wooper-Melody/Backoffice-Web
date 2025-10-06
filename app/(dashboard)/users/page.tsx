@@ -417,6 +417,10 @@ export default function UsersPage() {
             <div className="flex items-center justify-center p-8">
               <div className="text-muted-foreground">Loading users...</div>
             </div>
+          ) : filteredUsers.length === 0 ? (
+            <div className="flex items-center justify-center p-8">
+              <div className="text-center text-muted-foreground">Users not found</div>
+            </div>
           ) : (
             <Table>
               <TableHeader>
