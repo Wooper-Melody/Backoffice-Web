@@ -14,6 +14,35 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Melody Admin - Backoffice",
   description: "Admin panel for Melody music streaming platform",
+  keywords: ["melody", "admin", "backoffice", "music", "streaming", "management"],
+  authors: [
+    { name: 'Wooper Melody', url: 'https://example.com' }
+  ],
+  creator: 'Wooper Melody',
+  publisher: 'Wooper Melody',
+  applicationName: 'Melody Admin',
+  manifest: '/site.webmanifest',
+  icons: {
+    icon: [
+      { url: '/abstract-soundscape.png', type: 'image/png' },
+    ],
+    shortcut: '/abstract-soundscape.png'
+  },
+  openGraph: {
+    title: 'Melody Admin - Backoffice',
+    description: 'Admin panel for Melody music streaming platform',
+    siteName: 'Melody Admin',
+    images: [
+      {
+        url: '/abstract-soundscape.png',
+        width: 1200,
+        height: 630,
+        alt: 'Melody Admin'
+      }
+    ],
+    locale: 'en_US',
+    type: 'website'
+  }
 }
 
 export default function RootLayout({
@@ -22,7 +51,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${inter.variable} dark`}>
+    <html lang="en" className={`${inter.variable} dark`} suppressHydrationWarning>
       <body className="font-sans antialiased">
         <AuthProvider>
           <SWRProvider>

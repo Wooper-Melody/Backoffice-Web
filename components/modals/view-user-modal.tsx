@@ -46,6 +46,12 @@ export function ViewUserModal({ open, onOpenChange, user }: ViewUserModalProps) 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{[user.firstName, user.lastName].filter(Boolean).join(' ') || user.username}</DialogTitle>
+          <DialogDescription>
+            {getRoleDisplayName(user.role)} • {user.isBlocked ? 'Blocked' : 'Active'}
+          </DialogDescription>
+        </DialogHeader>
         <div className="space-y-4">
           {/* Header */}
           <div className="flex items-center space-x-4">
