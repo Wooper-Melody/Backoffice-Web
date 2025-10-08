@@ -5,6 +5,7 @@ import type React from "react"
 import { createContext, useContext, useEffect, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import type { UserResponse } from "@/types/auth"
+import { api } from "@/lib/api"
 
 interface AuthContextType {
   user: UserResponse | null
@@ -120,15 +121,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      await fetch("/auth/logout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-          // Backend expects token in x-access-token header for JWT validation
-          ...(typeof window !== 'undefined' && token ? { 'x-access-token': token } : {}),
-        },
-      })
+      // Use the centralized API client for logout
+      await api.logout()
     } catch (error) {
       console.error("Logout API error:", error)
       // Continue with logout even if API call fails
@@ -164,19 +158,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      const response = await fetch('/auth/refresh', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ refreshToken }),
-      })
-
-      if (!response.ok) {
-        throw new Error(`Refresh failed: ${response.status}`)
-      }
-
-      const authResponse = await response.json()
+      // Use the centralized API client for token refresh
+      const authResponse = await api.refreshAccessToken({ refreshToken })
       
       // Update auth state with new tokens
       const newExpiresAt = Date.now() + (authResponse.expiresIn * 1000)

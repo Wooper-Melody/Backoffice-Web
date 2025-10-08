@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Music, Eye, EyeOff, Loader2, AlertTriangle } from "lucide-react"
 import { validateLoginForm, type ValidationResult } from "@/lib/validation"
+import { api } from "@/lib/api"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -46,41 +47,31 @@ export default function LoginPage() {
     setError("")
     console.log('Attempting login with email:', email);
     try {
-      // Use relative path so Next can proxy to the external API in development
-      const response = await fetch('/auth/login', {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      })
+      // Use the centralized API client instead of direct fetch
+      const data = await api.login({ email, password })
 
-      const data = await response.json()
-
-      if (response.ok) {
-        // Check if we received both access token and refresh token
-        if (data.token && data.refreshToken && data.user && data.expiresIn) {
-          // Use auth context so provider updates app state and performs navigation
-          try {
-            login(data.token, data.refreshToken, data.user, data.expiresIn)
-          } catch (err) {
-            // Fallback: store tokens and navigate
-            const expiresAt = Date.now() + (data.expiresIn * 1000)
-            sessionStorage.setItem("admin_token", data.token)
-            sessionStorage.setItem("admin_refresh_token", data.refreshToken)
-            sessionStorage.setItem("admin_user", JSON.stringify(data.user))
-            sessionStorage.setItem("admin_expires_at", expiresAt.toString())
-            router.push("/catalog")
-          }
-        } else {
-          setError("Invalid response from server - missing required tokens or expiration")
+      // Check if we received both access token and refresh token
+      if (data.token && data.refreshToken && data.user && data.expiresIn) {
+        // Use auth context so provider updates app state and performs navigation
+        try {
+          login(data.token, data.refreshToken, data.user, data.expiresIn)
+        } catch (err) {
+          // Fallback: store tokens and navigate
+          const expiresAt = Date.now() + (data.expiresIn * 1000)
+          sessionStorage.setItem("admin_token", data.token)
+          sessionStorage.setItem("admin_refresh_token", data.refreshToken)
+          sessionStorage.setItem("admin_user", JSON.stringify(data.user))
+          sessionStorage.setItem("admin_expires_at", expiresAt.toString())
+          router.push("/catalog")
         }
       } else {
-        setError(data.detail || data.message || "Invalid credentials")
+        setError("Invalid response from server - missing required tokens or expiration")
       }
     } catch (error) {
       console.error("Login error:", error)
-      setError("Error while connecting. Please try again.")
+      // Extract error message from API client error
+      const errorMessage = error instanceof Error ? error.message : "Error while connecting. Please try again."
+      setError(errorMessage.includes("API Error") ? errorMessage.split(" - ")[1] || "Invalid credentials" : errorMessage)
     } finally {
       setIsLoading(false)
     }
