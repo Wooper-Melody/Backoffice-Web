@@ -24,17 +24,15 @@ cd Backoffice-Web
 npm install
 ```
 
-3. Edit `.env.local` with your settings:
+3. Configure environment variables:
 
 ```bash
-# API Configuration
-NEXT_PUBLIC_API_URL=https://melody-gateway-main-a53fb73.zuplo.app
-
-# Environment
-NODE_ENV=development
+# For development
+cp .env.local.example .env.local
+# Edit .env.local with your API settings
 ```
 
-5. Run the development server:
+4. Run the development server:
 
 ```bash
 npm run dev
@@ -42,7 +40,23 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## Environment Variables Configuration
+## Environment Configuration
+
+### Local Development Workflow
+
+This project uses a specific environment configuration workflow:
+
+| Command | Environment File | NODE_ENV | API URL | Use Case |
+|---------|------------------|----------|---------|----------|
+| `npm run dev` | `.env.local` | `development` | `localhost:30002` | Local development |
+| `npm run dev` | `.env.local` | `production` | Production Gateway | Local production testing |
+| Vercel Deploy | Vercel Variables | `production` | Production Gateway | Live production (main branch only) |
+
+### Environment Files
+
+- **`.env.local`** - Development environment (not committed)
+- **`.env.production`** - Local production testing (not committed) 
+- **`.env.local.example`** - Template for both environments
 
 ### Public Variables (Frontend)
 
@@ -52,12 +66,14 @@ Variables that start with `NEXT_PUBLIC_` are available in the frontend:
 
 ### Private Variables (Backend/Server)
 
-- `NODE_ENV`: Execution environment (`development`, `production`, `test`)
+- `NODE_ENV`: Execution environment (`development`, `production`)
 
-### Env Files
+### Deployment Strategy
 
-- `.env.local`: Local development variables (not committed)
-- `.env.production`: Production variables (set in your deployment platform)
+- **Local Development**: Work on any branch using `.env.local`
+- **Local Production Testing**: Test production build locally using `.env.production`
+- **Production Deploy**: Only `main` branch deploys to Vercel automatically
+- **Branch Protection**: No automatic deploys from `dev` or feature branches
 
 ## Architecture
 
@@ -94,7 +110,7 @@ lib/
 ## Available Scripts
 
 ```bash
-npm run dev        # Development server
+npm run dev        # Development server (uses .env.local)
 npm run build      # Production build
 npm run start      # Production server
 npm run lint       # Code linter
@@ -102,19 +118,33 @@ npm run lint       # Code linter
 
 ## Deployment
 
-### Vercel (Recommended)
+### Vercel Configuration
 
-1. Connect your repository in [Vercel](https://vercel.com)
-2. Configure environment variables in the Vercel dashboard
-3. Deploy automatically
+This project is configured with a specific deployment strategy:
 
-### Environment Variables for Production
+#### Deployment Rules
+- **Production**: Only `main` branch deploys automatically
+- **Preview**: Other branches (`dev`, features) do NOT deploy
+- **Local Testing**: Use `npm run dev` to test.
 
+#### Vercel Environment Variables (Production Only)
 ```bash
-NEXT_PUBLIC_API_URL=https://your-production-api.com
 NODE_ENV=production
-# Add other variables as needed
+NEXT_PUBLIC_API_URL=API_GATEWAY_URL_HERE
 ```
+
+#### Setup Steps in Vercel:
+1. Connect your repository
+2. Set **Production Branch**: `main`
+3. Disable **Preview Deployments** for other branches
+4. Configure environment variables:
+   - `NODE_ENV` = `production`
+   - `NEXT_PUBLIC_API_URL` = `API_GATEWAY_URL_HERE`
+
+#### Workflow:
+1. **Development**: Work on `dev` branch with `npm run dev` (uses `.env.local`)
+2. **Testing**: Test production locally with `npm run dev` (uses `.env.local but change to match production variables`)
+3. **Production**: Merge to `main` → Automatic deployment to Vercel
 
 ## Contribution
 
@@ -122,20 +152,6 @@ NODE_ENV=production
 2. Make your changes and commit: `git commit -m 'Add new feature'`
 3. Push the branch: `git push origin feature/new-feature`
 4. Open a Pull Request
-
-## Debugging
-
-### API Logs
-
-In development, API logs are printed to the browser console with the corresponding prefix.
-
-### Environment Variables
-
-Verify that the variables are loaded correctly:
-
-```javascript
-console.log('API URL:', process.env.NEXT_PUBLIC_API_URL)
-```
 
 ## Additional Documentation
 
