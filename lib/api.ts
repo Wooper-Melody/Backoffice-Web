@@ -21,18 +21,22 @@ import type {
 function getApiBaseUrl(): string {
   const url = process.env.NEXT_PUBLIC_API_URL
   
+  // In development, use empty string to leverage Next.js rewrites for CORS proxying
+  if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
+    return ''
+  }
+  
   if (!url) {
-    console.warn('NEXT_PUBLIC_API_URL is not set, using local fallback')
-    return '/api'
+    throw new Error('NEXT_PUBLIC_API_URL environment variable is required')
   }
   
   // Validate that the URL is valid
   try {
     new URL(url)
-    return url
+    // Remove trailing slash if present
+    return url.replace(/\/$/, '')
   } catch (error) {
-    console.error('NEXT_PUBLIC_API_URL is not a valid URL:', url)
-    return '/api'
+    throw new Error(`NEXT_PUBLIC_API_URL is not a valid URL: ${url}`)
   }
 }
 
@@ -148,7 +152,7 @@ class ApiClient {
     }
 
     try {
-      const response = await fetch('/auth/refresh', {
+      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -200,6 +204,7 @@ class ApiClient {
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    console.log('API Request:', { endpoint, API_BASE_URL, finalUrl: `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}` })
     // Check if token is expiring soon and refresh proactively
     if (typeof window !== 'undefined' && 
         endpoint.indexOf('/auth/login') === -1 && 
@@ -215,28 +220,13 @@ class ApiClient {
     }
 
     const makeRequest = async (useRefreshedToken = false): Promise<T> => {
-      // If running in the browser and API_BASE_URL points to a different origin,
-      // use a relative path so the request goes to the Next server (which will proxy
-      // to the external API via rewrites). This avoids CORS in development.
-      let url: string
-      if (typeof window !== 'undefined') {
-        try {
-          const apiOrigin = new URL(API_BASE_URL).origin
-          const currentOrigin = window.location.origin
-          if (apiOrigin !== currentOrigin) {
-            // Use relative endpoint to hit Next server which will proxy
-            url = endpoint.startsWith('/') ? endpoint : `/${endpoint}`
-          } else {
-            url = `${API_BASE_URL}${endpoint}`
-          }
-        } catch (e) {
-          // If API_BASE_URL isn't a valid URL, fallback to relative
-          url = endpoint.startsWith('/') ? endpoint : `/${endpoint}`
-        }
-      } else {
-        // On server side, use absolute API base
-        url = `${API_BASE_URL}${endpoint}`
-      }
+      // Build URL: in development API_BASE_URL is empty so we use relative paths
+      // In production API_BASE_URL contains the full backend URL
+      const url = API_BASE_URL 
+        ? `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`
+        : `${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`
+
+      console.log('API Request URL:', url)
 
       const config: RequestInit = {
         headers: {
@@ -269,8 +259,18 @@ class ApiClient {
         const response = await fetch(url, config)
 
         if (!response.ok) {
-          const errorData = await response.text().catch(() => 'Unknown error')
+          let errorMessage = 'Unknown error'
           
+          try {
+            const errorData = await response.text()
+            // Try to parse as JSON to extract the detail field
+            const errorJson = JSON.parse(errorData)
+            errorMessage = errorJson.detail || errorJson.message || errorData || 'Unknown error'
+          } catch (parseError) {
+            // If not JSON, use the raw text
+            errorMessage = await response.text().catch(() => 'Unknown error')
+          }
+
           // If we get a 401 Unauthorized error and haven't already tried refreshing the token
           if (response.status === 401 && !useRefreshedToken && 
               endpoint.indexOf('/auth/login') === -1 && 
@@ -283,11 +283,11 @@ class ApiClient {
               return makeRequest(true)
             } catch (refreshError) {
               // Token refresh failed, throw the original 401 error
-              throw new Error(`API Error [${response.status}]: ${response.statusText} - ${errorData}`)
+              throw new Error(errorMessage)
             }
           }
           
-          throw new Error(`API Error [${response.status}]: ${response.statusText} - ${errorData}`)
+          throw new Error(errorMessage)
         }
 
         // Handle empty responses
