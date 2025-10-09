@@ -21,11 +21,6 @@ import type {
 function getApiBaseUrl(): string {
   const url = process.env.NEXT_PUBLIC_API_URL
   
-  // In development, use empty string to leverage Next.js rewrites for CORS proxying
-  if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
-    return ''
-  }
-  
   if (!url) {
     throw new Error('NEXT_PUBLIC_API_URL environment variable is required')
   }
@@ -41,11 +36,6 @@ function getApiBaseUrl(): string {
 }
 
 export const API_BASE_URL = getApiBaseUrl()
-
-// Development logging
-if (process.env.NODE_ENV === 'development') {
-  console.log('API Base URL set to:', API_BASE_URL)
-}
 
 export interface CatalogItem {
   id: string
@@ -204,7 +194,6 @@ class ApiClient {
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    console.log('API Request:', { endpoint, API_BASE_URL, finalUrl: `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}` })
     // Check if token is expiring soon and refresh proactively
     if (typeof window !== 'undefined' && 
         endpoint.indexOf('/auth/login') === -1 && 
@@ -226,7 +215,9 @@ class ApiClient {
         ? `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`
         : `${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`
 
-      console.log('API Request URL:', url)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('API Request:', { endpoint, API_BASE_URL, finalUrl: url })
+      }
 
       const config: RequestInit = {
         headers: {
