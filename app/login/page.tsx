@@ -51,17 +51,15 @@ export default function LoginPage() {
       const data = await api.login({ email, password })
 
       // Check if we received both access token and refresh token
-      if (data.token && data.refreshToken && data.user && data.expiresIn) {
+      if (data.token && data.refreshToken && data.user) {
         // Use auth context so provider updates app state and performs navigation
         try {
-          login(data.token, data.refreshToken, data.user, data.expiresIn)
+          login(data.token, data.refreshToken, data.user)
         } catch (err) {
           // Fallback: store tokens and navigate
-          const expiresAt = Date.now() + (data.expiresIn * 1000)
           sessionStorage.setItem("admin_token", data.token)
           sessionStorage.setItem("admin_refresh_token", data.refreshToken)
           sessionStorage.setItem("admin_user", JSON.stringify(data.user))
-          sessionStorage.setItem("admin_expires_at", expiresAt.toString())
           router.push("/catalog")
         }
       } else {
