@@ -19,10 +19,10 @@ import type {
 
 // Configure API base URL with validation
 function getApiBaseUrl(): string {
-  const url = process.env.NEXT_API_URL
+  const url = process.env.NEXT_PUBLIC_API_URL
   
   if (!url) {
-    throw new Error('NEXT_API_URL environment variable is required')
+    throw new Error('NEXT_PUBLIC_API_URL environment variable is required')
   }
   
   // Validate that the URL is valid
@@ -31,7 +31,7 @@ function getApiBaseUrl(): string {
     // Remove trailing slash if present
     return url.replace(/\/$/, '')
   } catch (error) {
-    throw new Error(`NEXT_API_URL is not a valid URL: ${url}`)
+    throw new Error(`NEXT_PUBLIC_API_URL is not a valid URL: ${url}`)
   }
 }
 
