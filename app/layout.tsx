@@ -5,6 +5,7 @@ import "./globals.css"
 import { SWRProvider } from "@/components/providers/swr-provider"
 import { AuthProvider } from "@/components/auth/auth-provider"
 import { Toaster } from "@/components/ui/toaster"
+import VercelAnalytics from "@/components/analytics/vercel-analytics"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -56,6 +57,7 @@ export default function RootLayout({
           <SWRProvider>
             {children}
             <Toaster />
+            {process.env.NODE_ENV === 'production' && <VercelAnalytics />}
           </SWRProvider>
         </AuthProvider>
       </body>

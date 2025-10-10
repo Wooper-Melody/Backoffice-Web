@@ -103,21 +103,6 @@ export interface MetricsData {
 class ApiClient {
   private refreshPromise: Promise<AuthTokens> | null = null
 
-  private isTokenExpiringSoon(): boolean {
-    if (typeof window === 'undefined') return false
-    
-    try {
-      const expiresAt = sessionStorage.getItem('admin_expires_at')
-      if (!expiresAt) return false
-      
-      const timeUntilExpiry = parseInt(expiresAt) - Date.now()
-      const fiveMinutesInMs = 5 * 60 * 1000
-      return timeUntilExpiry <= fiveMinutesInMs
-    } catch (e) {
-      return false
-    }
-  }
-
   private async refreshToken(): Promise<AuthTokens> {
     // Prevent multiple simultaneous refresh attempts
     if (this.refreshPromise) {
@@ -167,26 +152,25 @@ class ApiClient {
           detail: {
             token: authResponse.token,
             refreshToken: authResponse.refreshToken,
-            user: authResponse.user,
-            expiresIn: authResponse.expiresIn
+            user: authResponse.user
           }
         }))
       }
 
       return {
         accessToken: authResponse.token,
-        refreshToken: authResponse.refreshToken,
-        expiresIn: authResponse.expiresIn
+        refreshToken: authResponse.refreshToken
       }
     } catch (error) {
+      console.error('Token refresh failed:', error)
       // Clear invalid tokens
       sessionStorage.removeItem('admin_token')
       sessionStorage.removeItem('admin_refresh_token')
       sessionStorage.removeItem('admin_user')
       
-      // Redirect to login
+      // Notify auth context to logout
       if (typeof window !== 'undefined') {
-        window.location.href = '/login'
+        window.dispatchEvent(new CustomEvent('authLogout'))
       }
       
       throw error
@@ -194,20 +178,6 @@ class ApiClient {
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    // Check if token is expiring soon and refresh proactively
-    if (typeof window !== 'undefined' && 
-        endpoint.indexOf('/auth/login') === -1 && 
-        endpoint.indexOf('/auth/refresh') === -1 &&
-        this.isTokenExpiringSoon()) {
-      
-      try {
-        await this.refreshToken()
-      } catch (error) {
-        // If proactive refresh fails, continue with request and let reactive refresh handle it
-        console.warn('Proactive token refresh failed, falling back to reactive refresh:', error)
-      }
-    }
-
     const makeRequest = async (useRefreshedToken = false): Promise<T> => {
       // Build URL: in development API_BASE_URL is empty so we use relative paths
       // In production API_BASE_URL contains the full backend URL
@@ -267,12 +237,15 @@ class ApiClient {
               endpoint.indexOf('/auth/login') === -1 && 
               endpoint.indexOf('/auth/refresh') === -1) {
             
+            console.log('Received 401, attempting token refresh...')
             try {
               // Attempt to refresh the token
               await this.refreshToken()
               // Retry the original request with the new token
+              console.log('Token refreshed, retrying original request...')
               return makeRequest(true)
             } catch (refreshError) {
+              console.error('Token refresh failed, request will fail with 401:', refreshError)
               // Token refresh failed, throw the original 401 error
               throw new Error(errorMessage)
             }
