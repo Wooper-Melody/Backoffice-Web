@@ -3,7 +3,6 @@
 export interface AuthResponse {
   token: string
   tokenType: string
-  expiresIn: number
   refreshToken: string
   user: UserResponse
 }
@@ -29,5 +28,4 @@ export interface LoginRequest {
 export interface AuthTokens {
   accessToken: string
   refreshToken: string
-  expiresIn: number
 }
