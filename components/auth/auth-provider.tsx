@@ -35,9 +35,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (storedToken && storedRefreshToken && storedUser) {
       try {
         const parsedUser = JSON.parse(storedUser)
-        setToken(storedToken)
-        setRefreshToken(storedRefreshToken)
-        setUser(parsedUser)
+        
+        // Validate that the stored user has ADMIN role
+        if (parsedUser.role !== "ADMIN") {
+          console.warn("Stored user is not an administrator, clearing session")
+          sessionStorage.removeItem("admin_token")
+          sessionStorage.removeItem("admin_refresh_token")
+          sessionStorage.removeItem("admin_user")
+        } else {
+          setToken(storedToken)
+          setRefreshToken(storedRefreshToken)
+          setUser(parsedUser)
+        }
       } catch (error) {
         console.error("Error parsing stored user:", error)
         // Clear invalid data
@@ -54,6 +63,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for token refresh events from the API client
     const handleTokenRefresh = (event: CustomEvent) => {
       const { token: newToken, refreshToken: newRefreshToken, user: newUser } = event.detail
+      
+      // Validate that the refreshed user still has ADMIN role
+      if (newUser.role !== "ADMIN") {
+        console.warn("User no longer has admin privileges, logging out")
+        handleAuthLogout()
+        return
+      }
+      
       setToken(newToken)
       setRefreshToken(newRefreshToken)
       setUser(newUser)
@@ -93,6 +110,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [token, pathname, router, isLoading])
 
   const login = (newToken: string, newRefreshToken: string, newUser: UserResponse) => {
+    // Check if user has ADMIN role
+    if (newUser.role !== "ADMIN") {
+      throw new Error("You are not an administrator")
+    }
+    
     setToken(newToken)
     setRefreshToken(newRefreshToken)
     setUser(newUser)
