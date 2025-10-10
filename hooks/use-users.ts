@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { api } from "@/lib/api"
+import { getFirebaseStorageUrl } from "@/lib/storage"
 import { useToast } from "@/hooks/use-toast"
 import type {
   UserAdminResponse,
@@ -20,9 +21,35 @@ export function useUsers() {
 
   const showError = useCallback((message: string, error?: any) => {
     console.error("Users API error:", error)
+
+    let detail: string | undefined
+    try {
+      if (!error) {
+        detail = undefined
+      } else if (typeof error === 'string') {
+        detail = error
+      } else if (error?.response?.data) {
+        // axios-like
+        const data = error.response.data
+        detail = data.detail || data.message || data.title || JSON.stringify(data)
+      } else if (error?.message) {
+        detail = error.message
+      } else {
+        detail = String(error)
+      }
+    } catch (e) {
+      detail = "Error parsing error details"
+    }
+
+    const maxDetailLength = 200
+    let displayDetail = detail
+    if (detail && detail.length > maxDetailLength) {
+      displayDetail = detail.substring(0, maxDetailLength) + "..."
+    }
+
     toast({
       title: "Error",
-      description: message,
+      description: displayDetail ? `${message}: ${displayDetail}` : message,
       variant: "destructive",
     })
   }, [toast])
@@ -39,6 +66,13 @@ export function useUsers() {
     setLoading(true)
     try {
       const data = await api.getAllUsers(filters)
+      // Normalizar profilePictureUrl para cada usuario
+      if (data?.users) {
+        data.users = data.users.map(u => ({
+          ...u,
+          profilePictureUrl: getFirebaseStorageUrl(u.profilePictureUrl) || u.profilePictureUrl
+        }))
+      }
       setUsersData(data)
       // Store the filters for future refreshes
       if (filters) {
@@ -55,6 +89,10 @@ export function useUsers() {
     setLoading(true)
     try {
       const user = await api.getUserById(userId)
+      // Normalizar profilePictureUrl
+      if (user) {
+        user.profilePictureUrl = getFirebaseStorageUrl(user.profilePictureUrl) || user.profilePictureUrl
+      }
       setSelectedUser(user)
       return user
     } catch (error) {
