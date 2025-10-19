@@ -3,6 +3,38 @@
 export type ContentType = "SONG" | "ALBUM" | "EP" | "SINGLE" | "PLAYLIST"
 export type EffectiveState = "BLOCKED_ADMIN" | "NOT_AVAILABLE_REGION" | "SCHEDULED" | "PUBLISHED"
 
+// Region codes according to the API
+export type Region = 
+  | "GLB"  // Global
+  | "NAM"  // North America
+  | "CAM"  // Central America
+  | "SAM"  // South America
+  | "EUW"  // Western Europe
+  | "EUE"  // Eastern Europe
+  | "EUN"  // Northern Europe
+  | "AFR"  // Africa
+  | "ASW"  // Western Asia
+  | "ASE"  // Eastern Asia
+  | "ASS"  // Southern Asia
+  | "ASC"  // Central Asia
+  | "OCE"  // Oceania
+
+export const REGION_LABELS: Record<Region, string> = {
+  GLB: "Global",
+  NAM: "North America",
+  CAM: "Central America",
+  SAM: "South America",
+  EUW: "Western Europe",
+  EUE: "Eastern Europe",
+  EUN: "Northern Europe",
+  AFR: "Africa",
+  ASW: "Western Asia",
+  ASE: "Eastern Asia",
+  ASS: "Southern Asia",
+  ASC: "Central Asia",
+  OCE: "Oceania"
+}
+
 export interface ContentAdminResponse {
   id: string
   type: ContentType

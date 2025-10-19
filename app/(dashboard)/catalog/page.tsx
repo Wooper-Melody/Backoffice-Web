@@ -200,8 +200,17 @@ export default function CatalogPage() {
   })()
 
   const handleViewDetails = (content: ContentAdminResponse) => {
-    // Navigate to details page
-    window.location.href = `/catalog/[id]?id=${content.id}`
+    // Determine if it's a song or collection
+    const visibleType = getVisibleType(content)
+    const isSong = visibleType === "SONG"
+    
+    // Navigate to appropriate details page
+    if (isSong) {
+      window.location.href = `/catalog/${content.id}`
+    } else {
+      // It's a collection (ALBUM, EP, SINGLE, PLAYLIST)
+      window.location.href = `/catalog/collections/${content.id}`
+    }
   }
 
   const handleEditMetadata = (content: ContentAdminResponse) => {
