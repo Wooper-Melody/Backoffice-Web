@@ -1,9 +1,13 @@
 "use client"
 
-import { useState } from "react"
-import { MoreHorizontal, Eye, Edit, Shield, ShieldOff } from "lucide-react"
+import React, { useState, useEffect } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,242 +16,248 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { DataTable } from "@/components/data-table/data-table"
-import { EditMetadataModal } from "@/components/modals/edit-metadata-modal"
-import { BlockContentModal } from "@/components/modals/block-content-modal"
+import {
+  Search,
+  MoreHorizontal,
+  Eye,
+  Edit,
+  Shield,
+  ShieldOff,
+  Music,
+  Video,
+  Calendar,
+} from "lucide-react"
+
 import { ExportMenu } from "@/components/common/export-menu"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationPrevious,
+  PaginationNext,
+  PaginationLink,
+  PaginationItem,
+  PaginationEllipsis,
+} from "@/components/ui/pagination"
+import { DatePickerWithRange } from "@/components/ui/date-range-picker"
+import { BlockContentModal } from "@/components/modals/block-content-modal"
+import { UnblockContentModal } from "@/components/modals/unblock-content-modal"
+import { useCatalog } from "@/hooks/use-catalog"
+import type { ContentAdminResponse, EffectiveState, ContentType } from "@/types/catalog"
+import type { DateRange } from "react-day-picker"
 
-// Mock data
-const catalogItems = [
-  {
-    id: "1",
-    type: "Song",
-    title: "Blinding Lights",
-    artist: "The Weeknd",
-    collection: "After Hours",
-    publishDate: "2019-11-29",
-    status: "Published",
-    hasVideo: true,
-    duration: "3:20",
-    cover: "/abstract-soundscape.png",
-  },
-  {
-    id: "2",
-    type: "Collection",
-    title: "After Hours",
-    artist: "The Weeknd",
-    collection: null,
-    publishDate: "2020-03-20",
-    status: "Published",
-    hasVideo: false,
-    duration: "56:16",
-    cover: "/abstract-soundscape.png",
-  },
-  {
-    id: "3",
-    type: "Song",
-    title: "Save Your Tears",
-    artist: "The Weeknd",
-    collection: "After Hours",
-    publishDate: "2020-03-20",
-    status: "Admin-blocked",
-    hasVideo: true,
-    duration: "3:35",
-    cover: "/abstract-soundscape.png",
-  },
-  {
-    id: "4",
-    type: "Song",
-    title: "Levitating",
-    artist: "Dua Lipa",
-    collection: "Future Nostalgia",
-    publishDate: "2020-03-27",
-    status: "Region-unavailable",
-    hasVideo: true,
-    duration: "3:23",
-    cover: "/abstract-soundscape.png",
-  },
-  {
-    id: "5",
-    type: "Song",
-    title: "New Song",
-    artist: "Artist Name",
-    collection: "Upcoming Album",
-    publishDate: "2024-12-01",
-    status: "Scheduled",
-    hasVideo: false,
-    duration: "3:45",
-    cover: "/abstract-soundscape.png",
-  },
-]
+const stateColors = {
+  PUBLISHED: "bg-green-500/10 text-green-500 border-green-500/20",
+  SCHEDULED: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+  NOT_AVAILABLE_REGION: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
+  BLOCKED_ADMIN: "bg-red-500/10 text-red-500 border-red-500/20",
+}
 
-const statusColors = {
-  Published: "bg-green-500/10 text-green-500 border-green-500/20",
-  Scheduled: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-  "Region-unavailable": "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
-  "Admin-blocked": "bg-red-500/10 text-red-500 border-red-500/20",
+const stateLabels = {
+  PUBLISHED: "Published",
+  SCHEDULED: "Scheduled",
+  NOT_AVAILABLE_REGION: "Region Unavailable",
+  BLOCKED_ADMIN: "Admin Blocked",
+}
+
+const typeLabels = {
+  SONG: "Song",
+  ALBUM: "Album",
+  EP: "EP",
+  SINGLE: "Single",
+  PLAYLIST: "Playlist",
+} as const
+
+// Obtiene el tipo visible según la regla:
+// - Si es SONG, mostrar "SONG"
+// - Si es colección, usar collectionType (ALBUM/EP/SINGLE/PLAYLIST)
+function getVisibleType(item: ContentAdminResponse): keyof typeof typeLabels {
+  // Soportar campos nuevos contentType/collectionType y mantener compatibilidad con item.type
+  const contentType = (item as any).contentType as ("SONG" | "COLLECTION") | undefined
+  const collectionType = (item as any).collectionType as keyof typeof typeLabels | undefined
+
+  if (contentType === "SONG") return "SONG"
+  if (contentType === "COLLECTION") return collectionType || (item.type as keyof typeof typeLabels)
+
+  // Fallback para datos antiguos donde 'type' ya es el tipo final
+  return item.type as keyof typeof typeLabels
 }
 
 export default function CatalogPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [typeFilter, setTypeFilter] = useState("all")
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [editModalOpen, setEditModalOpen] = useState(false)
-  const [blockModalOpen, setBlockModalOpen] = useState(false)
-  const [selectedItem, setSelectedItem] = useState<any>(null)
+  const [stateFilter, setStateFilter] = useState("all")
+  const [videoFilter, setVideoFilter] = useState("all")
+  const [dateRange, setDateRange] = useState<DateRange | undefined>()
+  const [currentPage, setCurrentPage] = useState(1)
+  const pageSize = 10
 
-  const handleViewDetails = (item: any) => {
-    // Navigate to state management page with item details
-    window.location.href = `/catalog/[id]?id=${item.id}`
+  // Separate state for applied filters (what gets sent to API)
+  const [appliedFilters, setAppliedFilters] = useState({
+    search: "",
+    type: "all",
+    state: "all",
+    video: "all",
+    dateRange: undefined as DateRange | undefined
+  })
+
+  const [blockContentOpen, setBlockContentOpen] = useState(false)
+  const [unblockContentOpen, setUnblockContentOpen] = useState(false)
+
+  const {
+    loading,
+    catalogData,
+    selectedContent,
+    setSelectedContent,
+    fetchCatalogContent,
+    blockContent,
+    unblockContent,
+  } = useCatalog()
+
+  // Fetch content on component mount and when applied filters change
+  useEffect(() => {
+    // Format dates to ISO-8601 format (YYYY-MM-DD) if dateRange is set
+    const releaseDateFrom = appliedFilters.dateRange?.from 
+      ? appliedFilters.dateRange.from.toISOString().split('T')[0]
+      : undefined
+    const releaseDateTo = appliedFilters.dateRange?.to 
+      ? appliedFilters.dateRange.to.toISOString().split('T')[0]
+      : undefined
+
+    fetchCatalogContent({
+      page: currentPage - 1, // API uses 0-based pagination
+      size: pageSize,
+      search: appliedFilters.search || undefined,
+      contentType: appliedFilters.type !== "all" ? appliedFilters.type as ContentType : undefined,
+      effectiveState: appliedFilters.state !== "all" ? appliedFilters.state as EffectiveState : undefined,
+      hasVideo: appliedFilters.video !== "all" ? appliedFilters.video === "yes" : undefined,
+      releaseDateFrom,
+      releaseDateTo,
+    })
+  }, [currentPage, appliedFilters, fetchCatalogContent])
+
+  // Reset to first page when applied filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [appliedFilters])
+
+  // Handle search button click
+  const handleSearch = () => {
+    setAppliedFilters({
+      search: searchTerm,
+      type: typeFilter,
+      state: stateFilter,
+      video: videoFilter,
+      dateRange: dateRange
+    })
   }
 
-  const handleEditMetadata = (item: any) => {
-    setSelectedItem(item)
-    setEditModalOpen(true)
+  // Handle clear filters
+  const handleClearFilters = () => {
+    setSearchTerm("")
+    setTypeFilter("all")
+    setStateFilter("all")
+    setVideoFilter("all")
+    setDateRange(undefined)
+    setAppliedFilters({
+      search: "",
+      type: "all",
+      state: "all",
+      video: "all",
+      dateRange: undefined
+    })
   }
 
-  const handleBlock = (item: any) => {
-    setSelectedItem(item)
-    setBlockModalOpen(true)
-  }
+  // Since we're now filtering server-side, use the results directly
+  const filteredContent = catalogData?.content || []
 
-  const handleUnblock = async (item: any) => {
-    try {
-      const response = await fetch(`/api/catalog/${item.id}/unblock`, {
-        method: "POST",
-      })
-      if (response.ok) {
-        // Refresh data or update state
-        console.log("Content unblocked successfully")
-      }
-    } catch (error) {
-      console.error("Error unblocking content:", error)
+  const totalPages = catalogData?.totalPages || 1
+  const totalElements = catalogData?.totalElements || 0
+
+  // Compact page list for large number of pages
+  const pageList = (() => {
+    if (totalPages <= 5) return Array.from({ length: totalPages }, (_, i) => i + 1)
+
+    const pages = new Set<number>()
+    pages.add(1)
+    pages.add(totalPages)
+
+    if (currentPage < 2) {
+      pages.add(2)
+      return Array.from(pages).filter((p) => p <= totalPages).sort((a, b) => a - b)
     }
+
+    if (currentPage >= totalPages - 1) {
+      pages.add(totalPages - 2)
+      pages.add(totalPages - 1)
+      return Array.from(pages).filter((p) => p >= 1).sort((a, b) => a - b)
+    }
+
+    pages.add(currentPage - 1)
+    pages.add(currentPage)
+    pages.add(currentPage + 1)
+
+    return Array.from(pages).sort((a, b) => a - b)
+  })()
+
+  const handleViewDetails = (content: ContentAdminResponse) => {
+    // Navigate to details page
+    window.location.href = `/catalog/[id]?id=${content.id}`
   }
 
-  const columns = [
-    {
-      key: "cover",
-      label: "",
-      render: (value: string, row: any) => (
-        <Avatar className="h-10 w-10">
-          <AvatarImage src={row.cover || "/placeholder.svg"} alt={row.title} />
-          <AvatarFallback>{row.title.charAt(0)}</AvatarFallback>
-        </Avatar>
-      ),
-    },
-    {
-      key: "type",
-      label: "Type",
-      sortable: true,
-      render: (value: string) => <Badge variant="outline">{value}</Badge>,
-    },
-    {
-      key: "title",
-      label: "Title",
-      sortable: true,
-      render: (value: string, row: any) => (
-        <div className="flex items-center space-x-2">
-          <span className="font-medium">{value}</span>
-          {row.hasVideo && (
-            <Badge variant="secondary" className="text-xs">
-              Video
-            </Badge>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: "artist",
-      label: "Main Artist",
-      sortable: true,
-    },
-    {
-      key: "collection",
-      label: "Collection",
-      sortable: true,
-      render: (value: string) => value || "-",
-    },
-    {
-      key: "publishDate",
-      label: "Publish Date",
-      sortable: true,
-    },
-    {
-      key: "status",
-      label: "Status",
-      sortable: true,
-      render: (value: string) => (
-        <Badge variant="outline" className={statusColors[value as keyof typeof statusColors]}>
-          {value}
-        </Badge>
-      ),
-    },
-    {
-      key: "duration",
-      label: "Duration",
-      sortable: true,
-    },
-    {
-      key: "actions",
-      label: "Actions",
-      render: (value: any, row: any) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => handleViewDetails(row)}>
-              <Eye className="mr-2 h-4 w-4" />
-              View Details
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleEditMetadata(row)}>
-              <Edit className="mr-2 h-4 w-4" />
-              Edit Metadata
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            {row.status === "Admin-blocked" ? (
-              <DropdownMenuItem onClick={() => handleUnblock(row)}>
-                <ShieldOff className="mr-2 h-4 w-4" />
-                Unblock
-              </DropdownMenuItem>
-            ) : (
-              <DropdownMenuItem onClick={() => handleBlock(row)}>
-                <Shield className="mr-2 h-4 w-4" />
-                Block
-              </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
-    },
-  ]
+  const handleEditMetadata = (content: ContentAdminResponse) => {
+    // TODO: Open edit metadata modal
+    console.log("Edit metadata for:", content)
+  }
 
-  const filterOptions = [
-    {
-      key: "type",
-      label: "Type",
-      options: [
-        { value: "Song", label: "Song" },
-        { value: "Collection", label: "Collection" },
-      ],
-    },
-    {
-      key: "status",
-      label: "Status",
-      options: [
-        { value: "Published", label: "Published" },
-        { value: "Scheduled", label: "Scheduled" },
-        { value: "Region-unavailable", label: "Region unavailable" },
-        { value: "Admin-blocked", label: "Admin blocked" },
-      ],
-    },
-  ]
+  const handleBlockContentClick = (content: ContentAdminResponse) => {
+    setSelectedContent(content)
+    setBlockContentOpen(true)
+  }
+
+  const handleUnblockContentClick = (content: ContentAdminResponse) => {
+    setSelectedContent(content)
+    setUnblockContentOpen(true)
+  }
+
+  const handleBlockContent = async (content: ContentAdminResponse, reason: string, notes?: string): Promise<boolean> => {
+    const success = await blockContent(content.id, { blocked: true, reason, notes })
+    if (success) {
+      setBlockContentOpen(false)
+    }
+    return success
+  }
+
+  const handleUnblockContent = async (content: ContentAdminResponse, notes?: string): Promise<boolean> => {
+    const success = await unblockContent(content.id, notes)
+    if (success) {
+      setUnblockContentOpen(false)
+    }
+    return success
+  }
+
+  // Statistics
+  const songsCount = filteredContent.filter((c) => (c as any).contentType === "SONG" || c.type === "SONG").length
+  const albumsCount = filteredContent.filter((c) => getVisibleType(c) === "ALBUM").length
+  const collectionsCount = filteredContent.filter((c) => {
+    const vt = getVisibleType(c)
+    return vt === "ALBUM" || vt === "EP" || vt === "SINGLE" || vt === "PLAYLIST"
+  }).length
+  const blockedCount = filteredContent.filter((c) => c.blockedByAdmin).length
+  const scheduledCount = filteredContent.filter((c) => c.effectiveState === "SCHEDULED").length
+
+  // Format duration from seconds to MM:SS
+  const formatDuration = (seconds?: number) => {
+    if (!seconds) return "-"
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}:${secs.toString().padStart(2, "0")}`
+  }
+
+  // Format date
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "-"
+    return new Date(dateString).toLocaleDateString("es-ES")
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -257,84 +267,335 @@ export default function CatalogPage() {
           <h1 className="text-3xl font-bold tracking-tight">Catalog</h1>
           <p className="text-muted-foreground">Browse and manage platform content</p>
         </div>
-        <ExportMenu
-          onExport={(format) => {
-            console.log(`Exporting catalog data as ${format}`)
-            // Implement export logic
-          }}
-        />
+        <div className="flex items-center space-x-2">
+          <ExportMenu
+            onExport={(format) => {
+              console.log(`Exporting catalog data as ${format}`)
+              // Implement export logic for catalog
+            }}
+          />
+        </div>
       </div>
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Songs</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Content</CardTitle>
+            <Music className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12,847</div>
-            <p className="text-xs text-muted-foreground">+180 from last month</p>
+            <div className="text-2xl font-bold">{new Intl.NumberFormat('es-ES').format(totalElements)}</div>
+            <p className="text-xs text-muted-foreground">Songs and Collections</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Collections</CardTitle>
+            <CardTitle className="text-sm font-medium">Content Distribution</CardTitle>
+            <Music className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">2,341</div>
-            <p className="text-xs text-muted-foreground">+25 from last month</p>
+            <div className="text-2xl font-bold">
+              {new Intl.NumberFormat('es-ES').format(songsCount)} / {new Intl.NumberFormat('es-ES').format(collectionsCount)}
+            </div>
+            <p className="text-xs text-muted-foreground">Songs / Collections</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Blocked Content</CardTitle>
+            <Shield className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">47</div>
-            <p className="text-xs text-muted-foreground">-3 from last week</p>
+            <div className="text-2xl font-bold">{blockedCount}</div>
+            <p className="text-xs text-muted-foreground">Admin Blocked</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Scheduled</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">156</div>
-            <p className="text-xs text-muted-foreground">+12 for this week</p>
+            <div className="text-2xl font-bold">{scheduledCount}</div>
+            <p className="text-xs text-muted-foreground">Upcoming Releases</p>
           </CardContent>
         </Card>
       </div>
 
-      <DataTable
-        title="Content Catalog"
-        description="Browse and manage all platform content"
-        data={catalogItems}
-        columns={columns}
-        searchable={true}
-        searchPlaceholder="Search by title, artist or collection..."
-        filterable={true}
-        filterOptions={filterOptions}
-        pageSize={10}
-      />
+      {/* Filters */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Filters and Search</CardTitle>
+          <CardDescription>Search content by title, artist or apply filters. Click Search to apply filters.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col space-y-4">
+            <div className="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-3">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by title, artist, or collection..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleSearch()
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="md:w-[160px]">
+                  <SelectValue placeholder="Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="SONG">Song</SelectItem>
+                  <SelectItem value="ALBUM">Album</SelectItem>
+                  <SelectItem value="EP">EP</SelectItem>
+                  <SelectItem value="SINGLE">Single</SelectItem>
+                  <SelectItem value="PLAYLIST">Playlist</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={stateFilter} onValueChange={setStateFilter}>
+                <SelectTrigger className="md:w-[160px]">
+                  <SelectValue placeholder="State" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All States</SelectItem>
+                  <SelectItem value="PUBLISHED">Published</SelectItem>
+                  <SelectItem value="SCHEDULED">Scheduled</SelectItem>
+                  <SelectItem value="NOT_AVAILABLE_REGION">Region Unavailable</SelectItem>
+                  <SelectItem value="BLOCKED_ADMIN">Admin Blocked</SelectItem>
+                </SelectContent>
+              </Select>
+              <DatePickerWithRange
+                className="md:w-[280px]"
+                value={dateRange}
+                onValueChange={setDateRange}
+                placeholder="Release date"
+              />
+              <Select value={videoFilter} onValueChange={setVideoFilter}>
+                <SelectTrigger className="md:w-[120px]">
+                  <SelectValue placeholder="Video" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="yes">With Video</SelectItem>
+                  <SelectItem value="no">No Video</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Button onClick={handleSearch} className="flex items-center space-x-2">
+                <Search className="h-4 w-4" />
+                <span>Search</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={handleClearFilters}
+                disabled={
+                  appliedFilters.search === "" && 
+                  appliedFilters.type === "all" && 
+                  appliedFilters.state === "all" && 
+                  appliedFilters.video === "all" &&
+                  !appliedFilters.dateRange
+                }
+              >
+                Clear Filters
+              </Button>
+              {(appliedFilters.search || appliedFilters.type !== "all" || appliedFilters.state !== "all" || appliedFilters.video !== "all" || appliedFilters.dateRange) ? (
+                <div className="text-sm text-muted-foreground">
+                  Active filters: {[
+                    appliedFilters.search && `Search: "${appliedFilters.search}"`,
+                    appliedFilters.type !== "all" && `Type: ${typeLabels[appliedFilters.type as ContentType]}`,
+                    appliedFilters.state !== "all" && `State: ${stateLabels[appliedFilters.state as EffectiveState]}`,
+                    appliedFilters.video !== "all" && `Video: ${appliedFilters.video === "yes" ? "Yes" : "No"}`,
+                    appliedFilters.dateRange?.from && `Release Date: ${appliedFilters.dateRange.from.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}${appliedFilters.dateRange.to ? ` - ${appliedFilters.dateRange.to.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}` : ''}`
+                  ].filter(Boolean).join(", ")}
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-      <EditMetadataModal
-        open={editModalOpen}
-        onOpenChange={setEditModalOpen}
-        item={selectedItem}
-        onSave={(updatedItem) => {
-          console.log("Saving metadata:", updatedItem)
-          setEditModalOpen(false)
-        }}
-      />
+      {/* Content Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Content ({filteredContent.length})</CardTitle>
+          <CardDescription>Manage catalog content and their availability</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex items-center justify-center p-8">
+              <div className="text-muted-foreground">Loading content...</div>
+            </div>
+          ) : filteredContent.length === 0 ? (
+            <div className="flex items-center justify-center p-8">
+              <div className="text-center text-muted-foreground">No content found</div>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Content</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Artist</TableHead>
+                  <TableHead>Collection</TableHead>
+                  <TableHead>Release Date</TableHead>
+                  <TableHead>State</TableHead>
+                  <TableHead>Duration</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredContent.map((content) => (
+                  <TableRow key={content.id}>
+                    <TableCell>
+                      <div className="flex items-center space-x-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={content.coverUrl || "/placeholder.svg"} alt={content.title} />
+                          <AvatarFallback>
+                            {content.title.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium flex items-center space-x-2">
+                            <span>{content.title}</span>
+                            {content.hasVideo && (
+                              <Video className="h-3 w-3 text-muted-foreground" />
+                            )}
+                            {content.explicit && (
+                              <Badge variant="secondary" className="text-xs">E</Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {typeLabels[getVisibleType(content)]}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm">{content.primaryArtistName}</TableCell>
+                    <TableCell className="text-sm">{content.collectionTitle || "-"}</TableCell>
+                    <TableCell className="text-sm">{formatDate(content.releaseDate)}</TableCell>
+                    <TableCell>
+                      <Badge 
+                        variant="outline" 
+                        className={stateColors[content.effectiveState]}
+                      >
+                        {stateLabels[content.effectiveState]}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm">{formatDuration(content.durationSeconds)}</TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuItem onClick={() => handleViewDetails(content)}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            View Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEditMetadata(content)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit Metadata
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          {content.blockedByAdmin ? (
+                            <DropdownMenuItem onClick={() => handleUnblockContentClick(content)}>
+                              <ShieldOff className="mr-2 h-4 w-4" />
+                              Unblock Content
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem onClick={() => handleBlockContentClick(content)}>
+                              <Shield className="mr-2 h-4 w-4" />
+                              Block Content
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Pagination Controls */}
+      <div className="flex items-center justify-center">
+        <Pagination aria-label="Catalog pagination">
+          <PaginationContent>
+            <PaginationPrevious
+              onClick={(e) => {
+                e.preventDefault()
+                setCurrentPage((p) => Math.max(1, p - 1))
+              }}
+              aria-disabled={currentPage === 1}
+            />
+
+            {pageList.map((page, idx) => {
+              const prev = pageList[idx - 1]
+              const gap = prev && page - prev > 1
+              return (
+                <React.Fragment key={page}>
+                  {gap ? (
+                    <PaginationItem>
+                      <PaginationEllipsis />
+                    </PaginationItem>
+                  ) : null}
+                  <PaginationItem>
+                    <PaginationLink
+                      href="#"
+                      isActive={page === currentPage}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        setCurrentPage(page)
+                      }}
+                    >
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                </React.Fragment>
+              )
+            })}
+
+            <PaginationNext
+              onClick={(e) => {
+                e.preventDefault()
+                setCurrentPage((p) => Math.min(totalPages, p + 1))
+              }}
+              aria-disabled={currentPage === totalPages}
+            />
+          </PaginationContent>
+        </Pagination>
+      </div>
 
       <BlockContentModal
-        open={blockModalOpen}
-        onOpenChange={setBlockModalOpen}
-        item={selectedItem}
-        onConfirm={(item) => {
-          console.log("Blocking content:", item)
-          setBlockModalOpen(false)
-        }}
+        open={blockContentOpen}
+        onOpenChange={setBlockContentOpen}
+        content={selectedContent}
+        onBlockContent={handleBlockContent}
+      />
+
+      <UnblockContentModal
+        open={unblockContentOpen}
+        onOpenChange={setUnblockContentOpen}
+        content={selectedContent}
+        onUnblockContent={handleUnblockContent}
       />
     </div>
   )
