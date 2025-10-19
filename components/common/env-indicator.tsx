@@ -21,7 +21,7 @@ export function EnvIndicator() {
         variant={env === 'development' ? 'default' : 'secondary'}
         className="text-xs font-mono"
       >
-        {env === 'development' ? '🔧 DEV Mode' : '🚀 PROD Mode'}
+        {env === 'development' ? 'DEV Mode' : 'PROD Mode'}
       </Badge>
       {env === 'development' && (
         <div className="mt-1 text-xs font-mono text-muted-foreground bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-2 rounded border">
