@@ -14,18 +14,19 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { AlertTriangle } from "lucide-react"
-import type { ContentAdminResponse } from "@/types/catalog"
+import type { ContentAdminResponse, BlockReason } from "@/types/catalog"
+import { BLOCK_REASON_LABELS } from "@/types/catalog"
 
 interface BlockContentModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   content: ContentAdminResponse | null
-  onBlockContent: (content: ContentAdminResponse, reason: string, notes?: string) => Promise<boolean>
+  onBlockContent: (content: ContentAdminResponse, reason: BlockReason, comment?: string) => Promise<boolean>
 }
 
 export function BlockContentModal({ open, onOpenChange, content, onBlockContent }: BlockContentModalProps) {
-  const [reason, setReason] = useState("COPYRIGHT_VIOLATION")
-  const [notes, setNotes] = useState("")
+  const [reason, setReason] = useState<BlockReason>("COPYRIGHT_VIOLATION")
+  const [comment, setcomment] = useState("")
   const [loading, setLoading] = useState(false)
 
   const handleConfirm = async () => {
@@ -33,11 +34,11 @@ export function BlockContentModal({ open, onOpenChange, content, onBlockContent 
 
     setLoading(true)
     try {
-      const success = await onBlockContent(content, reason, notes || undefined)
+      const success = await onBlockContent(content, reason, comment || undefined)
       if (success) {
         // Reset form
         setReason("COPYRIGHT_VIOLATION")
-        setNotes("")
+        setcomment("")
       }
     } finally {
       setLoading(false)
@@ -49,7 +50,7 @@ export function BlockContentModal({ open, onOpenChange, content, onBlockContent 
       if (!newOpen) {
         // Reset form when closing
         setReason("COPYRIGHT_VIOLATION")
-        setNotes("")
+        setcomment("")
       }
       onOpenChange(newOpen)
     }
@@ -71,28 +72,31 @@ export function BlockContentModal({ open, onOpenChange, content, onBlockContent 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
             <Label htmlFor="reason">Reason Code *</Label>
-            <Select value={reason} onValueChange={setReason} disabled={loading}>
+            <Select value={reason} onValueChange={(value) => setReason(value as BlockReason)} disabled={loading}>
               <SelectTrigger id="reason">
                 <SelectValue placeholder="Select a reason" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="COPYRIGHT_VIOLATION">Copyright Violation</SelectItem>
-                <SelectItem value="INAPPROPRIATE_CONTENT">Inappropriate Content</SelectItem>
-                <SelectItem value="LEGAL_REQUEST">Legal Request</SelectItem>
-                <SelectItem value="QUALITY_ISSUES">Quality Issues</SelectItem>
-                <SelectItem value="ARTIST_REQUEST">Artist Request</SelectItem>
-                <SelectItem value="OTHER">Other</SelectItem>
+                <SelectItem value="COPYRIGHT_VIOLATION">{BLOCK_REASON_LABELS.COPYRIGHT_VIOLATION}</SelectItem>
+                <SelectItem value="INAPPROPRIATE_CONTENT">{BLOCK_REASON_LABELS.INAPPROPRIATE_CONTENT}</SelectItem>
+                <SelectItem value="COMMUNITY_GUIDELINES_VIOLATION">{BLOCK_REASON_LABELS.COMMUNITY_GUIDELINES_VIOLATION}</SelectItem>
+                <SelectItem value="SPAM_OR_MISLEADING">{BLOCK_REASON_LABELS.SPAM_OR_MISLEADING}</SelectItem>
+                <SelectItem value="LEGAL_REQUEST">{BLOCK_REASON_LABELS.LEGAL_REQUEST}</SelectItem>
+                <SelectItem value="LICENSING_ISSUE">{BLOCK_REASON_LABELS.LICENSING_ISSUE}</SelectItem>
+                <SelectItem value="ARTIST_REQUEST">{BLOCK_REASON_LABELS.ARTIST_REQUEST}</SelectItem>
+                <SelectItem value="QUALITY_STANDARDS">{BLOCK_REASON_LABELS.QUALITY_STANDARDS}</SelectItem>
+                <SelectItem value="OTHER">{BLOCK_REASON_LABELS.OTHER}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="notes">Additional Notes (Optional)</Label>
+            <Label htmlFor="comment">Additional comment (Optional)</Label>
             <Textarea
-              id="notes"
+              id="comment"
               placeholder="Provide additional details about why this content is being blocked..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              value={comment}
+              onChange={(e) => setcomment(e.target.value)}
               rows={4}
               disabled={loading}
             />

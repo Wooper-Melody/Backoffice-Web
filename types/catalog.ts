@@ -1,7 +1,85 @@
 // Types for Catalog Management API based on OpenAPI schema
 
 export type ContentType = "SONG" | "ALBUM" | "EP" | "SINGLE" | "PLAYLIST"
-export type EffectiveState = "BLOCKED_ADMIN" | "NOT_AVAILABLE_REGION" | "SCHEDULED" | "PUBLISHED"
+export type EffectiveState = "BLOCKED_ADMIN" | "NOT_AVAILABLE_REGION" | "DRAFT" | "SCHEDULED" | "PUBLISHED"
+
+export type BlockReason =
+  | "COPYRIGHT_VIOLATION"
+  | "INAPPROPRIATE_CONTENT"
+  | "COMMUNITY_GUIDELINES_VIOLATION"
+  | "SPAM_OR_MISLEADING"
+  | "LEGAL_REQUEST"
+  | "LICENSING_ISSUE"
+  | "ARTIST_REQUEST"
+  | "QUALITY_STANDARDS"
+  | "OTHER"
+
+export const BLOCK_REASON_LABELS: Record<BlockReason, string> = {
+  COPYRIGHT_VIOLATION: "Copyright Violation",
+  INAPPROPRIATE_CONTENT: "Inappropriate Content",
+  COMMUNITY_GUIDELINES_VIOLATION: "Community Guidelines Violation",
+  SPAM_OR_MISLEADING: "Spam or Misleading",
+  LEGAL_REQUEST: "Legal Request",
+  LICENSING_ISSUE: "Licensing Issue",
+  ARTIST_REQUEST: "Artist Request",
+  QUALITY_STANDARDS: "Quality Standards",
+  OTHER: "Other"
+}
+
+export type Genre = 
+  | "ROCK"
+  | "ALTERNATIVE_ROCK"
+  | "INDIE_ROCK"
+  | "HARD_ROCK"
+  | "PUNK_ROCK"
+  | "POP"
+  | "INDIE_POP"
+  | "ELECTROPOP"
+  | "SYNTHPOP"
+  | "ELECTRONIC"
+  | "HOUSE"
+  | "TECHNO"
+  | "DUBSTEP"
+  | "AMBIENT"
+  | "HIP_HOP"
+  | "RAP"
+  | "TRAP"
+  | "R_AND_B"
+  | "REGGAETON"
+  | "LATIN_POP"
+  | "SALSA"
+  | "BACHATA"
+  | "JAZZ"
+  | "BLUES"
+  | "COUNTRY"
+  | "FOLK"
+  | "CLASSICAL"
+  | "SOUNDTRACK"
+  | "OTHER"
+
+export type Mood = 
+  | "ENERGETIC"
+  | "CALM"
+  | "RELAXED"
+  | "INTENSE"
+  | "HAPPY"
+  | "SAD"
+  | "ROMANTIC"
+  | "MELANCHOLIC"
+  | "NOSTALGIC"
+  | "HOPEFUL"
+  | "WORKOUT"
+  | "PARTY"
+  | "STUDY"
+  | "SLEEP"
+  | "DRIVING"
+  | "FOCUS"
+  | "DARK"
+  | "UPLIFTING"
+  | "DREAMY"
+  | "AGGRESSIVE"
+  | "PEACEFUL"
+  | "OTHER"
 
 // Region codes according to the API
 export type Region = 
@@ -83,7 +161,11 @@ export interface CatalogPageData {
 export interface UpdateBlockStatusRequest {
   blocked: boolean
   reason?: string
-  notes?: string
+  comment?: string
+}
+
+export interface UpdateContentAvailabilityRequest {
+  blockedRegions: string[]
 }
 
 export interface RegionalStateInfo {
@@ -96,7 +178,7 @@ export interface AvailabilityDetailResponse {
   effectiveState: EffectiveState
   blockedByAdmin: boolean
   blockedRegions: string[]
-  scheduledDate?: string
+  releaseDate?: string
   regionalStates: RegionalStateInfo[]
 }
 
@@ -113,36 +195,76 @@ export interface AuditEvent {
 
 export interface AuditResponse {
   events: AuditEvent[]
+  page: number
+  size: number
+  totalElements: number
+  totalPages: number
+  first: boolean
+  last: boolean
 }
 
-export interface SongDetailAdminResponse extends ContentAdminResponse {
+export interface SongDetailAdminResponse {
+  id: string
+  title: string
   durationSeconds: number
+  primaryArtistName: string
+  primaryArtistId: string
   collaboratorIds?: string[]
+  collectionTitle?: string
+  collectionId?: string
   collectionType?: "ALBUM" | "EP" | "SINGLE" | "PLAYLIST"
   positionInCollection?: number
+  releaseDate?: string
+  scheduledAt?: string
+  videoUrl?: string
+  explicit: boolean
+  coverUrl?: string
   storageReference?: string
-  genres?: string[]
-  moods?: string[]
+  genres?: Genre[]
+  moods?: Mood[]
+  blockedByAdmin: boolean
+  effectiveState: EffectiveState
   likesCount?: number
   deleted: boolean
+  createdAt: string
+  updatedAt: string
+  // Computed property for UI convenience
+  hasVideo?: boolean
 }
 
 export interface SongInCollectionInfo {
   songId: string
   title: string
+  position: number
   durationSeconds: number
-  positionInCollection: number
-  hasVideo: boolean
   explicit: boolean
+  videoUrl?: string
+  // Computed property for UI convenience
+  hasVideo?: boolean
 }
 
-export interface CollectionDetailAdminResponse extends ContentAdminResponse {
+export interface CollectionDetailAdminResponse {
+  id: string
+  title: string
+  description?: string
+  coverUrl?: string
   type: "ALBUM" | "EP" | "SINGLE" | "PLAYLIST"
-  ownerId?: string
-  ownerName?: string
-  isPrivate?: boolean
+  primaryArtistId: string
+  primaryArtistName?: string
+  durationSeconds?: number
+  scheduledReleaseDate?: string
+  actualReleaseDate?: string
+  blockedByAdmin: boolean
+  blockedRegions: string[]
+  availableRegions?: string[]
+  effectiveState: EffectiveState
   songs: SongInCollectionInfo[]
-  totalDurationSeconds: number
+  createdAt: string
+  updatedAt: string
+  // Computed properties for UI convenience (deprecated)
+  totalDurationSeconds?: number  // Use durationSeconds instead
   likesCount?: number
-  deleted: boolean
+  deleted?: boolean
+  releaseDate?: string
+  scheduledAt?: string
 }

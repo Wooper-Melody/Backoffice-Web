@@ -18,12 +18,27 @@ import {
   Edit,
   Shield,
   ShieldOff,
-  Lock,
-  Unlock,
   Eye,
+  Globe,
+  User,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react"
 import { useCatalog } from "@/hooks/use-catalog"
-import type { CollectionDetailAdminResponse, EffectiveState, Region } from "@/types/catalog"
+import { RegionAvailabilityModal } from "@/components/modals/region-availability-modal"
+import { BlockContentModal } from "@/components/modals/block-content-modal"
+import { UnblockContentModal } from "@/components/modals/unblock-content-modal"
+import type { 
+  CollectionDetailAdminResponse,
+  AuditEvent,
+  AuditResponse,
+  EffectiveState, 
+  Region,
+  AvailabilityDetailResponse,
+  BlockReason
+} from "@/types/catalog"
 import { REGION_LABELS } from "@/types/catalog"
 
 const stateColors = {
@@ -31,6 +46,7 @@ const stateColors = {
   SCHEDULED: "bg-blue-500/10 text-blue-500 border-blue-500/20",
   NOT_AVAILABLE_REGION: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
   BLOCKED_ADMIN: "bg-red-500/10 text-red-500 border-red-500/20",
+  DRAFT: "bg-gray-500/10 text-gray-500 border-gray-500/20",
 }
 
 const stateLabels = {
@@ -38,6 +54,7 @@ const stateLabels = {
   SCHEDULED: "Scheduled",
   NOT_AVAILABLE_REGION: "Region Unavailable",
   BLOCKED_ADMIN: "Admin Blocked",
+  DRAFT: "Draft",
 }
 
 const typeLabels = {
@@ -54,7 +71,24 @@ export default function CollectionDetailPage() {
 
   const [activeTab, setActiveTab] = useState("summary")
   const [collection, setCollection] = useState<CollectionDetailAdminResponse | null>(null)
-  const { loading, fetchCollectionDetail } = useCatalog()
+  const [availability, setAvailability] = useState<AvailabilityDetailResponse | null>(null)
+  const [auditData, setAuditData] = useState<AuditResponse | null>(null)
+  const [auditPage, setAuditPage] = useState(0)
+  const [auditPageSize] = useState(10)
+  const [loadingAudit, setLoadingAudit] = useState(false)
+  const [loadingAvailability, setLoadingAvailability] = useState(false)
+  const [regionAvailabilityOpen, setRegionAvailabilityOpen] = useState(false)
+  const [blockContentOpen, setBlockContentOpen] = useState(false)
+  const [unblockContentOpen, setUnblockContentOpen] = useState(false)
+  const { 
+    loading, 
+    fetchCollectionDetail, 
+    fetchAvailabilityDetail,
+    fetchAuditTrail,
+    updateAvailability,
+    blockContent,
+    unblockContent
+  } = useCatalog()
 
   useEffect(() => {
     if (collectionId) {
@@ -66,6 +100,91 @@ export default function CollectionDetailPage() {
     }
   }, [collectionId, fetchCollectionDetail])
 
+  useEffect(() => {
+    if (activeTab === "availability" && collectionId && !availability) {
+      loadAvailabilityDetail()
+    }
+  }, [activeTab, collectionId, availability])
+
+  useEffect(() => {
+    if (activeTab === "audit" && collectionId && !auditData) {
+      loadAuditTrail()
+    }
+  }, [activeTab, collectionId, auditData])
+
+  // Reload audit trail when page changes
+  useEffect(() => {
+    if (activeTab === "audit" && collectionId && auditData) {
+      loadAuditTrail()
+    }
+  }, [auditPage])
+
+  const loadAvailabilityDetail = async () => {
+    setLoadingAvailability(true)
+    try {
+      const response = await fetchAvailabilityDetail(collectionId, "COLLECTION")
+      if (response) {
+        setAvailability(response)
+      }
+    } finally {
+      setLoadingAvailability(false)
+    }
+  }
+
+  const loadAuditTrail = async () => {
+    setLoadingAudit(true)
+    try {
+      const response = await fetchAuditTrail(collectionId, "COLLECTION", auditPage, auditPageSize)
+      if (response) {
+        setAuditData(response)
+      }
+    } finally {
+      setLoadingAudit(false)
+    }
+  }
+
+  const handleUpdateAvailability = async (blockedRegions: string[]) => {
+    const success = await updateAvailability(collectionId, "COLLECTION", blockedRegions)
+    if (success) {
+      // Set loading state and reload both collection details and availability
+      setLoadingAvailability(true)
+      await Promise.all([
+        loadAvailabilityDetail(),
+        fetchCollectionDetail(collectionId).then((data) => {
+          if (data) setCollection(data)
+        })
+      ])
+      setLoadingAvailability(false)
+    }
+    return success
+  }
+
+  const handleBlockContent = async (reason: string, comment?: string): Promise<boolean> => {
+    const success = await blockContent(collectionId, "COLLECTION", { blocked: true, reason, comment })
+    if (success) {
+      setBlockContentOpen(false)
+      // Reload collection details and availability
+      await fetchCollectionDetail(collectionId).then((data) => {
+        if (data) setCollection(data)
+      })
+      await loadAvailabilityDetail()
+    }
+    return success
+  }
+
+  const handleUnblockContent = async (comment?: string): Promise<boolean> => {
+    const success = await unblockContent(collectionId, "COLLECTION", comment)
+    if (success) {
+      setUnblockContentOpen(false)
+      // Reload collection details and availability
+      await fetchCollectionDetail(collectionId).then((data) => {
+        if (data) setCollection(data)
+      })
+      await loadAvailabilityDetail()
+    }
+    return success
+  }
+
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
@@ -74,7 +193,7 @@ export default function CollectionDetailPage() {
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return "-"
-    return new Date(dateString).toLocaleDateString("es-ES", {
+    return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -83,12 +202,13 @@ export default function CollectionDetailPage() {
 
   const formatDateTime = (dateString?: string) => {
     if (!dateString) return "-"
-    return new Date(dateString).toLocaleString("es-ES", {
+    return new Date(dateString).toLocaleString("en-US", {
       year: "numeric",
-      month: "long",
+      month: "short",
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
+      hour12: true,
     })
   }
 
@@ -118,23 +238,62 @@ export default function CollectionDetailPage() {
           </div>
         </div>
         <div className="flex items-center space-x-2">
-          <Button variant="outline">
-            <Edit className="mr-2 h-4 w-4" />
-            Edit Metadata
+          <Button variant="outline" onClick={() => setRegionAvailabilityOpen(true)}>
+            <Globe className="mr-2 h-4 w-4" />
+            Manage Availability
           </Button>
           {collection.blockedByAdmin ? (
-            <Button variant="outline">
+            <Button variant="outline" onClick={() => setUnblockContentOpen(true)}>
               <ShieldOff className="mr-2 h-4 w-4" />
               Unblock
             </Button>
           ) : (
-            <Button variant="outline">
+            <Button variant="outline" onClick={() => setBlockContentOpen(true)}>
               <Shield className="mr-2 h-4 w-4" />
               Block
             </Button>
           )}
         </div>
       </div>
+
+      {/* Modals */}
+      <RegionAvailabilityModal
+        open={regionAvailabilityOpen}
+        onOpenChange={setRegionAvailabilityOpen}
+        contentId={collectionId}
+        contentType="COLLECTION"
+        contentTitle={collection.title}
+        currentBlockedRegions={collection.blockedRegions || []}
+        onUpdate={handleUpdateAvailability}
+      />
+
+      <BlockContentModal
+        open={blockContentOpen}
+        onOpenChange={setBlockContentOpen}
+        content={{
+          ...collection,
+          type: collection.type,
+          contentType: "COLLECTION" as const,
+          collectionType: collection.type,
+          primaryArtistName: collection.primaryArtistName || collection.title,
+          primaryArtistId: collection.primaryArtistId || ""
+        }}
+        onBlockContent={async (content, reason, notes) => handleBlockContent(reason, notes)}
+      />
+
+      <UnblockContentModal
+        open={unblockContentOpen}
+        onOpenChange={setUnblockContentOpen}
+        content={{
+          ...collection,
+          type: collection.type,
+          contentType: "COLLECTION" as const,
+          collectionType: collection.type,
+          primaryArtistName: collection.primaryArtistName || collection.title,
+          primaryArtistId: collection.primaryArtistId || ""
+        }}
+        onUnblockContent={async (content, notes) => handleUnblockContent(notes)}
+      />
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -171,31 +330,16 @@ export default function CollectionDetailPage() {
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">Release Date</span>
-                      <span className="text-sm">{formatDate(collection.releaseDate)}</span>
+                      <span className="text-sm">{formatDate(collection.actualReleaseDate || collection.scheduledReleaseDate || "")}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">Total Duration</span>
-                      <span className="text-sm">{formatDuration(collection.totalDurationSeconds)}</span>
+                      <span className="text-sm">{formatDuration(collection.durationSeconds || 0)}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">Songs</span>
                       <span className="text-sm">{collection.songs.length}</span>
                     </div>
-                    {collection.type === "PLAYLIST" && (
-                      <>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">Owner</span>
-                          <span className="text-sm">{collection.ownerName || "-"}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">Privacy</span>
-                          <Badge variant="secondary">
-                            {collection.isPrivate ? <Lock className="h-3 w-3 mr-1" /> : <Unlock className="h-3 w-3 mr-1" />}
-                            {collection.isPrivate ? "Private" : "Public"}
-                          </Badge>
-                        </div>
-                      </>
-                    )}
                     {collection.likesCount !== undefined && (
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">Likes</span>
@@ -227,12 +371,12 @@ export default function CollectionDetailPage() {
                   <TableBody>
                     {collection.songs.map((song) => (
                       <TableRow key={song.songId}>
-                        <TableCell className="font-medium">{song.positionInCollection}</TableCell>
+                        <TableCell className="font-medium">{song.position}</TableCell>
                         <TableCell>{song.title}</TableCell>
                         <TableCell>{formatDuration(song.durationSeconds)}</TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-1">
-                            {song.hasVideo && <Video className="h-3 w-3 text-muted-foreground" />}
+                            {song.videoUrl && <Video className="h-3 w-3 text-muted-foreground" />}
                             {song.explicit && <Badge variant="secondary" className="text-xs px-1">E</Badge>}
                           </div>
                         </TableCell>
@@ -258,73 +402,139 @@ export default function CollectionDetailPage() {
         <TabsContent value="availability" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Availability Status</CardTitle>
-              <CardDescription>
-                Effective state following priority: Blocked-admin &gt; Not-available-region &gt; Scheduled &gt; Published
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium">Effective State</p>
-                  <p className="text-2xl font-bold">{stateLabels[collection.effectiveState]}</p>
+                  <CardTitle>Availability Status</CardTitle>
+                  <CardDescription className="mt-1.5">
+                    Priority: Admin Block → Regional Restriction → Draft → Scheduled → Published
+                  </CardDescription>
                 </div>
-                <Badge variant="outline" className={`${stateColors[collection.effectiveState]} text-lg px-4 py-2`}>
-                  {stateLabels[collection.effectiveState]}
-                </Badge>
+                {availability && (
+                  <Badge 
+                    variant="outline" 
+                    className={`${stateColors[availability.effectiveState]} text-base px-4 py-2 font-medium`}
+                  >
+                    {stateLabels[availability.effectiveState]}
+                  </Badge>
+                )}
               </div>
-
-              {collection.blockedByAdmin && (
-                <div className="p-4 border border-red-500/20 bg-red-500/10 rounded-lg">
-                  <div className="flex items-start space-x-2">
-                    <Shield className="h-5 w-5 text-red-500 mt-0.5" />
-                    <div>
-                      <p className="font-medium text-red-500">Blocked by Admin</p>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        This content is currently blocked and not available to users.
-                      </p>
-                    </div>
-                  </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {loadingAvailability ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Clock className="h-12 w-12 mx-auto mb-4 opacity-50 animate-spin" />
+                  <p>Loading availability details...</p>
                 </div>
-              )}
-
-              {collection.scheduledAt && (
-                <div className="p-4 border border-blue-500/20 bg-blue-500/10 rounded-lg">
-                  <div className="flex items-start space-x-2">
-                    <Calendar className="h-5 w-5 text-blue-500 mt-0.5" />
-                    <div>
-                      <p className="font-medium text-blue-500">Scheduled Release</p>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Will be published on: {formatDateTime(collection.scheduledAt)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <Separator />
-
-              <div>
-                <h3 className="text-lg font-semibold mb-4">Regional Availability</h3>
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Content availability status per region
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                    {Object.entries(REGION_LABELS).map(([code, label]) => (
-                      <div
-                        key={code}
-                        className="flex items-center justify-between p-3 border rounded-lg"
-                      >
-                        <span className="text-sm font-medium">{label}</span>
-                        <Badge variant="outline" className="text-xs">
-                          {collection.effectiveState === "BLOCKED_ADMIN" ? "Blocked" : "Available"}
-                        </Badge>
+              ) : availability ? (
+                <>
+                  {/* Status Alerts */}
+                  <div className="space-y-3">
+                    {availability.blockedByAdmin && (
+                      <div className="p-4 border border-red-500/20 bg-red-500/5 rounded-lg">
+                        <div className="flex items-start gap-3">
+                          <div className="p-2 rounded-full bg-red-500/10">
+                            <Shield className="h-4 w-4 text-red-600 dark:text-red-400" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-semibold text-red-600 dark:text-red-400">Admin Blocked</p>
+                            <p className="text-sm text-muted-foreground mt-0.5">
+                              This collection is globally blocked and unavailable to all users in every region.
+                            </p>
+                          </div>
+                        </div>
                       </div>
-                    ))}
+                    )}
+
+                    {availability.releaseDate && (
+                      <div className="p-4 border border-blue-500/20 bg-blue-500/5 rounded-lg">
+                        <div className="flex items-start gap-3">
+                          <div className="p-2 rounded-full bg-blue-500/10">
+                            <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-semibold text-blue-600 dark:text-blue-400">Scheduled Release</p>
+                            <p className="text-sm text-muted-foreground mt-0.5">
+                              Publishing scheduled for <span className="font-medium text-foreground">{formatDateTime(availability.releaseDate)}</span>
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {availability.blockedRegions && availability.blockedRegions.length > 0 && (
+                      <div className="p-4 border border-amber-500/20 bg-amber-500/5 rounded-lg">
+                        <div className="flex items-start gap-3">
+                          <div className="p-2 rounded-full bg-amber-500/10">
+                            <Globe className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-semibold text-amber-600 dark:text-amber-400">
+                              Regional Restrictions ({availability.blockedRegions.length})
+                            </p>
+                            <p className="text-sm text-muted-foreground mt-0.5">
+                              Blocked in: <span className="font-medium text-foreground">
+                                {availability.blockedRegions.map(r => REGION_LABELS[r as Region] || r).join(", ")}
+                              </span>
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
+
+                  <Separator />
+
+                  {/* Regional Availability Grid */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-base font-semibold">Regional Availability</h3>
+                      <span className="text-sm text-muted-foreground">
+                        {availability.regionalStates.length} regions
+                      </span>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {availability.regionalStates.map((regionalState) => {
+                        const regionLabel = REGION_LABELS[regionalState.region as Region] || regionalState.region
+                        
+                        return (
+                          <div
+                            key={regionalState.region}
+                            className={`relative p-3 border rounded-lg transition-all ${stateColors[regionalState.state]}`}
+                          >
+                            <div className="flex items-start justify-between gap-2 mb-1">
+                              <span className="text-sm font-medium">{regionLabel}</span>
+                              <Badge 
+                                variant="outline" 
+                                className={`text-xs ${stateColors[regionalState.state]} shrink-0`}
+                              >
+                                {stateLabels[regionalState.state]}
+                              </Badge>
+                            </div>
+                            {regionalState.state === "SCHEDULED" && availability.releaseDate && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                <Calendar className="h-3 w-3 inline mr-1" />
+                                {formatDateTime(availability.releaseDate)}
+                              </p>
+                            )}
+                            {regionalState.reason && (
+                              <p className="text-xs text-muted-foreground mt-1 line-clamp-2" title={regionalState.reason}>
+                                {regionalState.reason}
+                              </p>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p className="font-medium">Unable to load availability details</p>
+                  <p className="text-sm mt-1">Please try refreshing the page</p>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -352,17 +562,148 @@ export default function CollectionDetailPage() {
         <TabsContent value="audit" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Audit Trail</CardTitle>
+              <CardTitle className="flex items-center justify-between">
+                <span>Audit Trail</span>
+                {auditData && auditData.totalElements > 0 && (
+                  <Badge variant="secondary" className="text-sm font-normal">
+                    {auditData.totalElements} {auditData.totalElements === 1 ? 'event' : 'events'}
+                  </Badge>
+                )}
+              </CardTitle>
               <CardDescription>
-                History of administrative changes (blocks/unblocks and availability changes)
+                Administrative changes history including blocks/unblocks and regional availability modifications
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="text-center py-12 text-muted-foreground">
-                <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No audit trail available for collections</p>
-                <p className="text-sm mt-2">According to requirements, only songs have audit trails</p>
-              </div>
+            <CardContent className="space-y-4">
+              {loadingAudit ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Clock className="h-12 w-12 mx-auto mb-4 opacity-50 animate-spin" />
+                  <p>Loading audit trail...</p>
+                </div>
+              ) : auditData && auditData.events.length > 0 ? (
+                <>
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[180px]">Timestamp</TableHead>
+                          <TableHead className="w-[150px]">Event</TableHead>
+                          <TableHead className="w-[120px]">User</TableHead>
+                          <TableHead className="w-[140px]">Scope/Region</TableHead>
+                          <TableHead>Details</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {auditData.events.map((event: AuditEvent) => (
+                          <TableRow key={event.eventId}>
+                            <TableCell className="text-sm font-mono">
+                              {formatDateTime(event.timestamp)}
+                            </TableCell>
+                            <TableCell>
+                              <Badge 
+                                variant="outline"
+                                className={
+                                  event.eventType.includes('BLOCK') 
+                                    ? 'border-red-500/50 text-red-700 dark:text-red-400' 
+                                    : event.eventType.includes('UNBLOCK')
+                                    ? 'border-green-500/50 text-green-700 dark:text-green-400'
+                                    : 'border-blue-500/50 text-blue-700 dark:text-blue-400'
+                                }
+                              >
+                                {event.eventType.replace(/_/g, ' ')}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              <div className="flex items-center gap-2">
+                                <User className="h-3 w-3 text-muted-foreground" />
+                                {event.performedByUsername}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              {event.region ? (
+                                <div className="flex items-center gap-1">
+                                  <Globe className="h-3 w-3 text-muted-foreground" />
+                                  {REGION_LABELS[event.region as Region] || event.region}
+                                </div>
+                              ) : event.scope ? (
+                                <Badge variant="secondary" className="text-xs">
+                                  {event.scope}
+                                </Badge>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground max-w-md">
+                              <div className="truncate" title={event.details || ''}>
+                                {event.details || '-'}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {/* Pagination Controls */}
+                  {auditData.totalPages > 1 && (
+                    <div className="flex items-center justify-between px-2">
+                      <div className="text-sm text-muted-foreground">
+                        Showing {auditData.page * auditData.size + 1} to{' '}
+                        {Math.min((auditData.page + 1) * auditData.size, auditData.totalElements)} of{' '}
+                        {auditData.totalElements} events
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setAuditPage(0)}
+                          disabled={auditData.first || loadingAudit}
+                          className="h-8 w-8 p-0"
+                        >
+                          <ChevronsLeft className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setAuditPage(auditPage - 1)}
+                          disabled={auditData.first || loadingAudit}
+                          className="h-8 w-8 p-0"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <div className="flex items-center gap-1 px-2">
+                          <span className="text-sm font-medium">{auditData.page + 1}</span>
+                          <span className="text-sm text-muted-foreground">of {auditData.totalPages}</span>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setAuditPage(auditPage + 1)}
+                          disabled={auditData.last || loadingAudit}
+                          className="h-8 w-8 p-0"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setAuditPage(auditData.totalPages - 1)}
+                          disabled={auditData.last || loadingAudit}
+                          className="h-8 w-8 p-0"
+                        >
+                          <ChevronsRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p className="font-medium">No audit events recorded</p>
+                  <p className="text-sm mt-2">Administrative changes will appear here</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

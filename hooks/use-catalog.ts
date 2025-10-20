@@ -10,7 +10,9 @@ import type {
   CatalogPageData,
   UpdateBlockStatusRequest,
   SongDetailAdminResponse,
-  CollectionDetailAdminResponse
+  CollectionDetailAdminResponse,
+  AvailabilityDetailResponse,
+  AuditResponse
 } from "@/types/catalog"
 
 export function useCatalog() {
@@ -87,45 +89,37 @@ export function useCatalog() {
   }, [showError])
 
   const fetchSongDetail = useCallback(async (songId: string) => {
-    setLoading(true)
     try {
       const song = await api.getSongDetail(songId)
       // Normalizar coverUrl
       if (song) {
         song.coverUrl = getFirebaseStorageUrl(song.coverUrl) || song.coverUrl
       }
-      setSelectedContent(song)
       return song
     } catch (error) {
       showError("Error while fetching song details", error)
       return null
-    } finally {
-      setLoading(false)
     }
   }, [showError])
 
   const fetchCollectionDetail = useCallback(async (collectionId: string) => {
-    setLoading(true)
     try {
       const collection = await api.getCollectionDetail(collectionId)
       // Normalizar coverUrl
       if (collection) {
         collection.coverUrl = getFirebaseStorageUrl(collection.coverUrl) || collection.coverUrl
       }
-      setSelectedContent(collection)
       return collection
     } catch (error) {
       showError("Error while fetching collection details", error)
       return null
-    } finally {
-      setLoading(false)
     }
   }, [showError])
 
-  const blockContent = useCallback(async (contentId: string, data: UpdateBlockStatusRequest) => {
+  const blockContent = useCallback(async (contentId: string, contentType: "SONG" | "COLLECTION", data: UpdateBlockStatusRequest) => {
     setLoading(true)
     try {
-      await api.updateContentBlockStatus(contentId, { ...data, blocked: true })
+      await api.updateContentBlockStatus(contentId, contentType, { ...data, blocked: true })
       showSuccess("Content blocked successfully")
       
       // Update the content in the local list immediately for instant UI feedback
@@ -150,10 +144,10 @@ export function useCatalog() {
     }
   }, [showError, showSuccess, fetchCatalogContent, catalogData, currentFilters])
 
-  const unblockContent = useCallback(async (contentId: string, notes?: string) => {
+  const unblockContent = useCallback(async (contentId: string, contentType: "SONG" | "COLLECTION", comment?: string) => {
     setLoading(true)
     try {
-      await api.updateContentBlockStatus(contentId, { blocked: false, notes })
+      await api.updateContentBlockStatus(contentId, contentType, { blocked: false, comment })
       showSuccess("Content unblocked successfully")
       
       // Update the content in the local list immediately for instant UI feedback
@@ -178,6 +172,40 @@ export function useCatalog() {
     }
   }, [showError, showSuccess, fetchCatalogContent, catalogData, currentFilters])
 
+  const fetchAvailabilityDetail = useCallback(async (contentId: string, contentType: "SONG" | "COLLECTION") => {
+    try {
+      const availability = await api.getContentAvailabilityDetail(contentId, contentType)
+      return availability
+    } catch (error) {
+      showError("Error while fetching availability details", error)
+      return null
+    }
+  }, [showError])
+
+  const fetchAuditTrail = useCallback(async (contentId: string, contentType: "SONG" | "COLLECTION", page = 0, size = 10) => {
+    try {
+      const auditData = await api.getContentAuditTrail(contentId, contentType, page, size)
+      return auditData
+    } catch (error) {
+      showError("Error while fetching audit trail", error)
+      return null
+    }
+  }, [showError])
+
+  const updateAvailability = useCallback(async (contentId: string, contentType: "SONG" | "COLLECTION", blockedRegions: string[]) => {
+    setLoading(true)
+    try {
+      await api.updateContentAvailability(contentId, contentType, { blockedRegions })
+      showSuccess("Regional availability updated successfully")
+      return true
+    } catch (error) {
+      showError("Error while updating regional availability", error)
+      return false
+    } finally {
+      setLoading(false)
+    }
+  }, [showError, showSuccess])
+
   return {
     loading,
     catalogData,
@@ -186,6 +214,9 @@ export function useCatalog() {
     fetchCatalogContent,
     fetchSongDetail,
     fetchCollectionDetail,
+    fetchAvailabilityDetail,
+    fetchAuditTrail,
+    updateAvailability,
     blockContent,
     unblockContent,
   }

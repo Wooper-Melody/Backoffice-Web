@@ -19,11 +19,11 @@ interface UnblockContentModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   content: ContentAdminResponse | null
-  onUnblockContent: (content: ContentAdminResponse, notes?: string) => Promise<boolean>
+  onUnblockContent: (content: ContentAdminResponse, comment?: string) => Promise<boolean>
 }
 
 export function UnblockContentModal({ open, onOpenChange, content, onUnblockContent }: UnblockContentModalProps) {
-  const [notes, setNotes] = useState("")
+  const [comment, setcomment] = useState("")
   const [loading, setLoading] = useState(false)
 
   const handleConfirm = async () => {
@@ -31,10 +31,10 @@ export function UnblockContentModal({ open, onOpenChange, content, onUnblockCont
 
     setLoading(true)
     try {
-      const success = await onUnblockContent(content, notes || undefined)
+      const success = await onUnblockContent(content, comment || undefined)
       if (success) {
         // Reset form
-        setNotes("")
+        setcomment("")
       }
     } finally {
       setLoading(false)
@@ -45,7 +45,7 @@ export function UnblockContentModal({ open, onOpenChange, content, onUnblockCont
     if (!loading) {
       if (!newOpen) {
         // Reset form when closing
-        setNotes("")
+        setcomment("")
       }
       onOpenChange(newOpen)
     }
@@ -66,12 +66,12 @@ export function UnblockContentModal({ open, onOpenChange, content, onUnblockCont
 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="notes">Notes (Optional)</Label>
+            <Label htmlFor="comment">comment (Optional)</Label>
             <Textarea
-              id="notes"
+              id="comment"
               placeholder="Provide additional details about why this content is being unblocked..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              value={comment}
+              onChange={(e) => setcomment(e.target.value)}
               rows={4}
               disabled={loading}
             />

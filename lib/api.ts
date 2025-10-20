@@ -22,6 +22,7 @@ import type {
   CatalogFilters,
   CatalogPageData,
   UpdateBlockStatusRequest,
+  UpdateContentAvailabilityRequest,
   AvailabilityDetailResponse,
   AuditResponse,
   SongDetailAdminResponse,
@@ -338,19 +339,26 @@ class ApiClient {
     return this.request(`/catalog/admin/collections/${collectionId}`)
   }
 
-  async getContentAvailabilityDetail(contentId: string): Promise<AvailabilityDetailResponse> {
-    return this.request(`/catalog/admin/${contentId}/availability`)
+  async getContentAvailabilityDetail(contentId: string, contentType: "SONG" | "COLLECTION"): Promise<AvailabilityDetailResponse> {
+    return this.request(`/catalog/admin/${contentId}/availability?contentType=${contentType}`)
   }
 
-  async updateContentBlockStatus(contentId: string, data: UpdateBlockStatusRequest): Promise<void> {
-    return this.request(`/catalog/admin/${contentId}/block`, {
+  async updateContentBlockStatus(contentId: string, contentType: "SONG" | "COLLECTION", data: UpdateBlockStatusRequest): Promise<void> {
+    return this.request(`/catalog/admin/${contentId}/block?contentType=${contentType}`, {
       method: "PATCH",
       body: JSON.stringify(data),
     })
   }
 
-  async getContentAuditTrail(contentId: string): Promise<AuditResponse> {
-    return this.request(`/catalog/admin/${contentId}/audit`)
+  async updateContentAvailability(contentId: string, contentType: "SONG" | "COLLECTION", data: UpdateContentAvailabilityRequest): Promise<void> {
+    return this.request(`/catalog/admin/${contentId}/availability?contentType=${contentType}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async getContentAuditTrail(contentId: string, contentType: "SONG" | "COLLECTION" = "SONG", page = 0, size = 10): Promise<AuditResponse> {
+    return this.request(`/catalog/admin/${contentId}/audit?contentType=${contentType}&page=${page}&size=${size}`)
   }
 
   // Metrics API

@@ -20,7 +20,7 @@ import {
   Search,
   MoreHorizontal,
   Eye,
-  Edit,
+  Globe,
   Shield,
   ShieldOff,
   Music,
@@ -41,6 +41,7 @@ import {
 import { DatePickerWithRange } from "@/components/ui/date-range-picker"
 import { BlockContentModal } from "@/components/modals/block-content-modal"
 import { UnblockContentModal } from "@/components/modals/unblock-content-modal"
+import { RegionAvailabilityModal } from "@/components/modals/region-availability-modal"
 import { useCatalog } from "@/hooks/use-catalog"
 import type { ContentAdminResponse, EffectiveState, ContentType } from "@/types/catalog"
 import type { DateRange } from "react-day-picker"
@@ -50,6 +51,7 @@ const stateColors = {
   SCHEDULED: "bg-blue-500/10 text-blue-500 border-blue-500/20",
   NOT_AVAILABLE_REGION: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
   BLOCKED_ADMIN: "bg-red-500/10 text-red-500 border-red-500/20",
+  DRAFT: "bg-gray-500/10 text-gray-500 border-gray-500/20",
 }
 
 const stateLabels = {
@@ -57,6 +59,7 @@ const stateLabels = {
   SCHEDULED: "Scheduled",
   NOT_AVAILABLE_REGION: "Region Unavailable",
   BLOCKED_ADMIN: "Admin Blocked",
+  DRAFT: "Draft",
 }
 
 const typeLabels = {
@@ -102,6 +105,7 @@ export default function CatalogPage() {
 
   const [blockContentOpen, setBlockContentOpen] = useState(false)
   const [unblockContentOpen, setUnblockContentOpen] = useState(false)
+  const [regionAvailabilityOpen, setRegionAvailabilityOpen] = useState(false)
 
   const {
     loading,
@@ -111,6 +115,7 @@ export default function CatalogPage() {
     fetchCatalogContent,
     blockContent,
     unblockContent,
+    updateAvailability,
   } = useCatalog()
 
   // Fetch content on component mount and when applied filters change
@@ -214,8 +219,38 @@ export default function CatalogPage() {
   }
 
   const handleEditMetadata = (content: ContentAdminResponse) => {
-    // TODO: Open edit metadata modal
-    console.log("Edit metadata for:", content)
+    setSelectedContent(content)
+    setRegionAvailabilityOpen(true)
+  }
+
+  const handleUpdateAvailability = async (blockedRegions: string[]) => {
+    if (!selectedContent) return false
+    
+    const contentType = selectedContent.contentType === "SONG" ? "SONG" : "COLLECTION"
+    const success = await updateAvailability(selectedContent.id, contentType, blockedRegions)
+    
+    if (success) {
+      // Refresh the catalog to show updated data
+      const releaseDateFrom = appliedFilters.dateRange?.from 
+        ? appliedFilters.dateRange.from.toISOString().split('T')[0]
+        : undefined
+      const releaseDateTo = appliedFilters.dateRange?.to 
+        ? appliedFilters.dateRange.to.toISOString().split('T')[0]
+        : undefined
+
+      await fetchCatalogContent({
+        page: currentPage - 1,
+        size: pageSize,
+        search: appliedFilters.search || undefined,
+        contentType: appliedFilters.type !== "all" ? appliedFilters.type as ContentType : undefined,
+        effectiveState: appliedFilters.state !== "all" ? appliedFilters.state as EffectiveState : undefined,
+        hasVideo: appliedFilters.video !== "all" ? appliedFilters.video === "yes" : undefined,
+        releaseDateFrom,
+        releaseDateTo,
+      })
+    }
+    
+    return success
   }
 
   const handleBlockContentClick = (content: ContentAdminResponse) => {
@@ -228,16 +263,18 @@ export default function CatalogPage() {
     setUnblockContentOpen(true)
   }
 
-  const handleBlockContent = async (content: ContentAdminResponse, reason: string, notes?: string): Promise<boolean> => {
-    const success = await blockContent(content.id, { blocked: true, reason, notes })
+  const handleBlockContent = async (content: ContentAdminResponse, reason: string, comment?: string): Promise<boolean> => {
+    const contentType = content.contentType === "SONG" ? "SONG" : "COLLECTION"
+    const success = await blockContent(content.id, contentType, { blocked: true, reason, comment })
     if (success) {
       setBlockContentOpen(false)
     }
     return success
   }
 
-  const handleUnblockContent = async (content: ContentAdminResponse, notes?: string): Promise<boolean> => {
-    const success = await unblockContent(content.id, notes)
+  const handleUnblockContent = async (content: ContentAdminResponse, comment?: string): Promise<boolean> => {
+    const contentType = content.contentType === "SONG" ? "SONG" : "COLLECTION"
+    const success = await unblockContent(content.id, contentType, comment)
     if (success) {
       setUnblockContentOpen(false)
     }
@@ -518,8 +555,8 @@ export default function CatalogPage() {
                             View Details
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleEditMetadata(content)}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit Metadata
+                            <Globe className="mr-2 h-4 w-4" />
+                            Manage Regions
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           {content.blockedByAdmin ? (
@@ -605,6 +642,16 @@ export default function CatalogPage() {
         onOpenChange={setUnblockContentOpen}
         content={selectedContent}
         onUnblockContent={handleUnblockContent}
+      />
+
+      <RegionAvailabilityModal
+        open={regionAvailabilityOpen}
+        onOpenChange={setRegionAvailabilityOpen}
+        contentId={selectedContent?.id || ""}
+        contentType={selectedContent?.contentType === "SONG" ? "SONG" : "COLLECTION"}
+        contentTitle={selectedContent?.title || ""}
+        currentBlockedRegions={[]}
+        onUpdate={handleUpdateAvailability}
       />
     </div>
   )
