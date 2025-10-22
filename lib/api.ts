@@ -17,63 +17,56 @@ import type {
   AuthTokens
 } from "@/types/auth"
 
-// Configure API base URL with validation
-function getApiBaseUrl(): string {
-  const url = process.env.NEXT_PUBLIC_API_URL
+import type {
+  ContentAdminResponse,
+  CatalogFilters,
+  CatalogPageData,
+  UpdateBlockStatusRequest,
+  UpdateContentAvailabilityRequest,
+  AvailabilityDetailResponse,
+  AuditResponse,
+  SongDetailAdminResponse,
+  CollectionDetailAdminResponse
+} from "@/types/catalog"
+
+// Configure API base URLs based on environment
+function getApiBaseUrls() {
+  const env = process.env.NODE_ENV || 'production'
   
-  if (!url) {
-    throw new Error('NEXT_PUBLIC_API_URL environment variable is required')
-  }
-  
-  // Validate that the URL is valid
-  try {
-    new URL(url)
-    // Remove trailing slash if present
-    return url.replace(/\/$/, '')
-  } catch (error) {
-    throw new Error(`NEXT_PUBLIC_API_URL is not a valid URL: ${url}`)
-  }
-}
-
-export const API_BASE_URL = getApiBaseUrl()
-
-export interface CatalogItem {
-  id: string
-  type: "Song" | "Collection"
-  title: string
-  artist: string
-  collection?: string
-  publishDate: string
-  status: "Published" | "Scheduled" | "Unavailable-region" | "Blocked-admin"
-  hasVideo: boolean
-  duration: string
-  cover?: string
-  explicit?: boolean
-  genres?: string[]
-  isrc?: string
-  label?: string
-}
-
-export interface AvailabilityPolicy {
-  id: string
-  contentId: string
-  type: "allow" | "deny"
-  regions: string[]
-  schedule?: {
-    startDate?: Date
-    endDate?: Date
-    startTime?: string
-    endTime?: string
+  if (env === 'development') {
+    return {
+      users: process.env.USER_SERVICE || 'http://localhost:8080',
+      catalog: process.env.CATALOG_SERVICE || 'http://localhost:30003',
+      auth: process.env.AUTH_SERVICE || 'http://localhost:8080', // Auth is part of users service
+    }
+  } else {
+    // Production/Staging - use API Gateway
+    const gatewayUrl = process.env.NEXT_PUBLIC_API_URL
+    
+    if (!gatewayUrl) {
+      throw new Error('NEXT_PUBLIC_API_URL environment variable is required for production')
+    }
+    
+    // Validate that the URL is valid
+    try {
+      new URL(gatewayUrl)
+      // Remove trailing slash if present
+      const baseUrl = gatewayUrl.replace(/\/$/, '')
+      return {
+        users: baseUrl,
+        catalog: baseUrl,
+        auth: baseUrl,
+      }
+    } catch (error) {
+      throw new Error(`NEXT_PUBLIC_API_URL is not a valid URL: ${gatewayUrl}`)
+    }
   }
 }
 
-export interface BlockAction {
-  contentId: string
-  scope: "global" | "regions"
-  regions?: string[]
-  reasonCode: string
-  additionalNotes?: string
-}
+export const API_BASE_URLS = getApiBaseUrls()
+
+// Legacy export for backward compatibility
+export const API_BASE_URL = API_BASE_URLS.users
 
 export interface MetricsData {
   users: {
@@ -177,16 +170,30 @@ class ApiClient {
     }
   }
 
+  private getServiceUrl(endpoint: string): string {
+    // Determine which service to use based on the endpoint
+    if (endpoint.startsWith('/catalog/')) {
+      return API_BASE_URLS.catalog
+    } else if (endpoint.startsWith('/auth/')) {
+      return API_BASE_URLS.auth
+    } else if (endpoint.startsWith('/users/')) {
+      return API_BASE_URLS.users
+    } else {
+      // Default to users service for other endpoints
+      return API_BASE_URLS.users
+    }
+  }
+
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const makeRequest = async (useRefreshedToken = false): Promise<T> => {
-      // Build URL: in development API_BASE_URL is empty so we use relative paths
-      // In production API_BASE_URL contains the full backend URL
-      const url = API_BASE_URL 
-        ? `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`
-        : `${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`
+      // Determine the base URL based on the endpoint
+      const baseUrl = this.getServiceUrl(endpoint)
+      
+      // Build full URL
+      const url = `${baseUrl}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`
 
       if (process.env.NODE_ENV === 'development') {
-        console.log('API Request:', { endpoint, API_BASE_URL, finalUrl: url })
+        console.log('API Request:', { endpoint, baseUrl, finalUrl: url })
       }
 
       const config: RequestInit = {
@@ -297,73 +304,61 @@ class ApiClient {
     })
   }
 
-  // Catalog API
-  async getCatalogItems(params?: {
-    search?: string
-    type?: string
-    status?: string
-    page?: number
-    limit?: number
-  }): Promise<{ items: CatalogItem[]; total: number }> {
+  // Catalog Admin API
+  async getAllCatalogContent(filters?: CatalogFilters): Promise<CatalogPageData> {
     const searchParams = new URLSearchParams()
-    if (params?.search) searchParams.set("search", params.search)
-    if (params?.type) searchParams.set("type", params.type)
-    if (params?.status) searchParams.set("status", params.status)
-    if (params?.page) searchParams.set("page", params.page.toString())
-    if (params?.limit) searchParams.set("limit", params.limit.toString())
+    if (filters?.page !== undefined) searchParams.set("page", filters.page.toString())
+    if (filters?.size !== undefined) searchParams.set("size", filters.size.toString())
+    if (filters?.search) searchParams.set("search", filters.search)
+    if (filters?.contentType) searchParams.set("contentType", filters.contentType)
+    if (filters?.effectiveState) searchParams.set("effectiveState", filters.effectiveState)
+    if (filters?.hasVideo !== undefined) searchParams.set("hasVideo", filters.hasVideo.toString())
+    if (filters?.releaseDateFrom) searchParams.set("releaseDateFrom", filters.releaseDateFrom)
+    if (filters?.releaseDateTo) searchParams.set("releaseDateTo", filters.releaseDateTo)
+    if (filters?.region) searchParams.set("region", filters.region)
 
-    return this.request(`/catalog?${searchParams}`)
+    const response: any = await this.request(`/catalog/admin?${searchParams}`)
+    
+    return {
+      content: response.content,
+      totalElements: response.totalElements,
+      totalPages: response.totalPages,
+      currentPage: response.number,
+      pageSize: response.size,
+      first: response.first,
+      last: response.last,
+      empty: response.empty
+    }
   }
 
-  async getCatalogItem(id: string): Promise<CatalogItem> {
-    return this.request(`/catalog/${id}`)
+  async getSongDetail(songId: string): Promise<SongDetailAdminResponse> {
+    return this.request(`/catalog/admin/songs/${songId}`)
   }
 
-  async updateCatalogItem(id: string, data: Partial<CatalogItem>): Promise<CatalogItem> {
-    return this.request(`/catalog/${id}`, {
-      method: "PUT",
+  async getCollectionDetail(collectionId: string): Promise<CollectionDetailAdminResponse> {
+    return this.request(`/catalog/admin/collections/${collectionId}`)
+  }
+
+  async getContentAvailabilityDetail(contentId: string, contentType: "SONG" | "COLLECTION"): Promise<AvailabilityDetailResponse> {
+    return this.request(`/catalog/admin/${contentId}/availability?contentType=${contentType}`)
+  }
+
+  async updateContentBlockStatus(contentId: string, contentType: "SONG" | "COLLECTION", data: UpdateBlockStatusRequest): Promise<void> {
+    return this.request(`/catalog/admin/${contentId}/block?contentType=${contentType}`, {
+      method: "PATCH",
       body: JSON.stringify(data),
     })
   }
 
-  // Availability API
-  async getAvailabilityPolicies(contentId: string): Promise<AvailabilityPolicy[]> {
-    return this.request(`/availability/${contentId}`)
-  }
-
-  async createAvailabilityPolicy(policy: Omit<AvailabilityPolicy, "id">): Promise<AvailabilityPolicy> {
-    return this.request("/availability", {
-      method: "POST",
-      body: JSON.stringify(policy),
+  async updateContentAvailability(contentId: string, contentType: "SONG" | "COLLECTION", data: UpdateContentAvailabilityRequest): Promise<void> {
+    return this.request(`/catalog/admin/${contentId}/availability?contentType=${contentType}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
     })
   }
 
-  async updateAvailabilityPolicy(id: string, policy: Partial<AvailabilityPolicy>): Promise<AvailabilityPolicy> {
-    return this.request(`/availability/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(policy),
-    })
-  }
-
-  async deleteAvailabilityPolicy(id: string): Promise<void> {
-    return this.request(`/availability/${id}`, {
-      method: "DELETE",
-    })
-  }
-
-  // Blocking API
-  async blockContent(action: BlockAction): Promise<void> {
-    return this.request("/content/block", {
-      method: "POST",
-      body: JSON.stringify(action),
-    })
-  }
-
-  async unblockContent(contentId: string, notes?: string): Promise<void> {
-    return this.request("/content/unblock", {
-      method: "POST",
-      body: JSON.stringify({ contentId, notes }),
-    })
+  async getContentAuditTrail(contentId: string, contentType: "SONG" | "COLLECTION" = "SONG", page = 0, size = 10): Promise<AuditResponse> {
+    return this.request(`/catalog/admin/${contentId}/audit?contentType=${contentType}&page=${page}&size=${size}`)
   }
 
   // Metrics API

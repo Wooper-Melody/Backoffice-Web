@@ -1,6 +1,7 @@
 import type React from "react"
 import { Header } from "@/components/layout/header"
 import { Sidebar } from "@/components/layout/sidebar"
+import { EnvIndicator } from "@/components/common/env-indicator"
 
 export default function DashboardLayout({
   children,
@@ -14,6 +15,7 @@ export default function DashboardLayout({
         <Header />
         <main className="flex-1 overflow-auto">{children}</main>
       </div>
+      <EnvIndicator />
     </div>
   )
 }

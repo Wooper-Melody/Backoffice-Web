@@ -19,8 +19,8 @@ import {
   Shield,
   ShieldOff,
   Eye,
-  User,
   Globe,
+  User,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
@@ -31,7 +31,7 @@ import { RegionAvailabilityModal } from "@/components/modals/region-availability
 import { BlockContentModal } from "@/components/modals/block-content-modal"
 import { UnblockContentModal } from "@/components/modals/unblock-content-modal"
 import type { 
-  SongDetailAdminResponse, 
+  CollectionDetailAdminResponse,
   AuditEvent,
   AuditResponse,
   EffectiveState, 
@@ -57,21 +57,20 @@ const stateLabels = {
   DRAFT: "Draft",
 }
 
-const collectionTypeLabels = {
+const typeLabels = {
   ALBUM: "Album",
   EP: "EP",
   SINGLE: "Single",
   PLAYLIST: "Playlist",
 }
 
-
-export default function SongDetailPage() {
+export default function CollectionDetailPage() {
   const params = useParams()
   const router = useRouter()
-  const songId = params.id as string
+  const collectionId = params.id as string
 
   const [activeTab, setActiveTab] = useState("summary")
-  const [song, setSong] = useState<SongDetailAdminResponse | null>(null)
+  const [collection, setCollection] = useState<CollectionDetailAdminResponse | null>(null)
   const [availability, setAvailability] = useState<AvailabilityDetailResponse | null>(null)
   const [auditData, setAuditData] = useState<AuditResponse | null>(null)
   const [auditPage, setAuditPage] = useState(0)
@@ -83,8 +82,8 @@ export default function SongDetailPage() {
   const [unblockContentOpen, setUnblockContentOpen] = useState(false)
   const { 
     loading, 
-    fetchSongDetail, 
-    fetchAvailabilityDetail, 
+    fetchCollectionDetail, 
+    fetchAvailabilityDetail,
     fetchAuditTrail,
     updateAvailability,
     blockContent,
@@ -92,30 +91,30 @@ export default function SongDetailPage() {
   } = useCatalog()
 
   useEffect(() => {
-    if (songId) {
-      fetchSongDetail(songId).then((data) => {
+    if (collectionId) {
+      fetchCollectionDetail(collectionId).then((data) => {
         if (data) {
-          setSong(data)
+          setCollection(data)
         }
       })
     }
-  }, [songId, fetchSongDetail])
+  }, [collectionId, fetchCollectionDetail])
 
   useEffect(() => {
-    if (activeTab === "availability" && songId && !availability) {
+    if (activeTab === "availability" && collectionId && !availability) {
       loadAvailabilityDetail()
     }
-  }, [activeTab, songId, availability])
+  }, [activeTab, collectionId, availability])
 
   useEffect(() => {
-    if (activeTab === "audit" && songId && !auditData) {
+    if (activeTab === "audit" && collectionId && !auditData) {
       loadAuditTrail()
     }
-  }, [activeTab, songId, auditData])
+  }, [activeTab, collectionId, auditData])
 
   // Reload audit trail when page changes
   useEffect(() => {
-    if (activeTab === "audit" && songId && auditData) {
+    if (activeTab === "audit" && collectionId && auditData) {
       loadAuditTrail()
     }
   }, [auditPage])
@@ -123,7 +122,7 @@ export default function SongDetailPage() {
   const loadAvailabilityDetail = async () => {
     setLoadingAvailability(true)
     try {
-      const response = await fetchAvailabilityDetail(songId, "SONG")
+      const response = await fetchAvailabilityDetail(collectionId, "COLLECTION")
       if (response) {
         setAvailability(response)
       }
@@ -135,7 +134,7 @@ export default function SongDetailPage() {
   const loadAuditTrail = async () => {
     setLoadingAudit(true)
     try {
-      const response = await fetchAuditTrail(songId, "SONG", auditPage, auditPageSize)
+      const response = await fetchAuditTrail(collectionId, "COLLECTION", auditPage, auditPageSize)
       if (response) {
         setAuditData(response)
       }
@@ -145,14 +144,14 @@ export default function SongDetailPage() {
   }
 
   const handleUpdateAvailability = async (blockedRegions: string[]) => {
-    const success = await updateAvailability(songId, "SONG", blockedRegions)
+    const success = await updateAvailability(collectionId, "COLLECTION", blockedRegions)
     if (success) {
-      // Set loading state and reload both song details and availability
+      // Set loading state and reload both collection details and availability
       setLoadingAvailability(true)
       await Promise.all([
         loadAvailabilityDetail(),
-        fetchSongDetail(songId).then((data) => {
-          if (data) setSong(data)
+        fetchCollectionDetail(collectionId).then((data) => {
+          if (data) setCollection(data)
         })
       ])
       setLoadingAvailability(false)
@@ -161,12 +160,12 @@ export default function SongDetailPage() {
   }
 
   const handleBlockContent = async (reason: string, comment?: string): Promise<boolean> => {
-    const success = await blockContent(songId, "SONG", { blocked: true, reason, comment })
+    const success = await blockContent(collectionId, "COLLECTION", { blocked: true, reason, comment })
     if (success) {
       setBlockContentOpen(false)
-      // Reload song details and availability
-      await fetchSongDetail(songId).then((data) => {
-        if (data) setSong(data)
+      // Reload collection details and availability
+      await fetchCollectionDetail(collectionId).then((data) => {
+        if (data) setCollection(data)
       })
       await loadAvailabilityDetail()
     }
@@ -174,12 +173,12 @@ export default function SongDetailPage() {
   }
 
   const handleUnblockContent = async (comment?: string): Promise<boolean> => {
-    const success = await unblockContent(songId, "SONG", comment)
+    const success = await unblockContent(collectionId, "COLLECTION", comment)
     if (success) {
       setUnblockContentOpen(false)
-      // Reload song details and availability
-      await fetchSongDetail(songId).then((data) => {
-        if (data) setSong(data)
+      // Reload collection details and availability
+      await fetchCollectionDetail(collectionId).then((data) => {
+        if (data) setCollection(data)
       })
       await loadAvailabilityDetail()
     }
@@ -213,11 +212,11 @@ export default function SongDetailPage() {
     })
   }
 
-  if (loading || !song) {
+  if (loading || !collection) {
     return (
       <div className="p-6">
         <div className="flex items-center justify-center h-96">
-          <div className="text-muted-foreground">Loading song details...</div>
+          <div className="text-muted-foreground">Loading collection details...</div>
         </div>
       </div>
     )
@@ -232,22 +231,18 @@ export default function SongDetailPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">{song.title}</h1>
-            <p className="text-muted-foreground">by {song.primaryArtistName}</p>
+            <h1 className="text-3xl font-bold tracking-tight">{collection.title}</h1>
+            <p className="text-muted-foreground">
+              {typeLabels[collection.type]} by {collection.primaryArtistName}
+            </p>
           </div>
         </div>
         <div className="flex items-center space-x-2">
-          {song.collectionId && (
-            <Button variant="outline" onClick={() => router.push(`/catalog/collections/${song.collectionId}`)}>
-              <Eye className="mr-2 h-4 w-4" />
-              View Collection
-            </Button>
-          )}
           <Button variant="outline" onClick={() => setRegionAvailabilityOpen(true)}>
             <Globe className="mr-2 h-4 w-4" />
             Manage Availability
           </Button>
-          {song.blockedByAdmin ? (
+          {collection.blockedByAdmin ? (
             <Button variant="outline" onClick={() => setUnblockContentOpen(true)}>
               <ShieldOff className="mr-2 h-4 w-4" />
               Unblock
@@ -261,15 +256,43 @@ export default function SongDetailPage() {
         </div>
       </div>
 
-      {/* Region Availability Modal */}
+      {/* Modals */}
       <RegionAvailabilityModal
         open={regionAvailabilityOpen}
         onOpenChange={setRegionAvailabilityOpen}
-        contentId={songId}
-        contentType="SONG"
-        contentTitle={song.title}
-        currentBlockedRegions={availability?.blockedRegions || []}
+        contentId={collectionId}
+        contentType="COLLECTION"
+        contentTitle={collection.title}
+        currentBlockedRegions={collection.blockedRegions || []}
         onUpdate={handleUpdateAvailability}
+      />
+
+      <BlockContentModal
+        open={blockContentOpen}
+        onOpenChange={setBlockContentOpen}
+        content={{
+          ...collection,
+          type: collection.type,
+          contentType: "COLLECTION" as const,
+          collectionType: collection.type,
+          primaryArtistName: collection.primaryArtistName || collection.title,
+          primaryArtistId: collection.primaryArtistId || ""
+        }}
+        onBlockContent={async (content, reason, notes) => handleBlockContent(reason, notes)}
+      />
+
+      <UnblockContentModal
+        open={unblockContentOpen}
+        onOpenChange={setUnblockContentOpen}
+        content={{
+          ...collection,
+          type: collection.type,
+          contentType: "COLLECTION" as const,
+          collectionType: collection.type,
+          primaryArtistName: collection.primaryArtistName || collection.title,
+          primaryArtistId: collection.primaryArtistId || ""
+        }}
+        onUnblockContent={async (content, notes) => handleUnblockContent(notes)}
       />
 
       {/* Tabs */}
@@ -289,45 +312,38 @@ export default function SongDetailPage() {
               <CardContent className="pt-6">
                 <div className="space-y-4">
                   <Avatar className="h-48 w-48 mx-auto">
-                    <AvatarImage src={song.coverUrl || "/placeholder.svg"} alt={song.title} />
+                    <AvatarImage src={collection.coverUrl || "/placeholder.svg"} alt={collection.title} />
                     <AvatarFallback className="text-4xl">
-                      {song.title.charAt(0)}
+                      {collection.title.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Type</span>
+                      <Badge variant="outline">{typeLabels[collection.type]}</Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">Status</span>
-                      <Badge variant="outline" className={stateColors[song.effectiveState]}>
-                        {stateLabels[song.effectiveState]}
+                      <Badge variant="outline" className={stateColors[collection.effectiveState]}>
+                        {stateLabels[collection.effectiveState]}
                       </Badge>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Duration</span>
-                      <span className="text-sm">{formatDuration(song.durationSeconds)}</span>
+                      <span className="text-sm text-muted-foreground">Release Date</span>
+                      <span className="text-sm">{formatDate(collection.actualReleaseDate || collection.scheduledReleaseDate || "")}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Release Date</span>
-                      <span className="text-sm">{formatDate(song.releaseDate)}</span>
+                      <span className="text-sm text-muted-foreground">Total Duration</span>
+                      <span className="text-sm">{formatDuration(collection.durationSeconds || 0)}</span>
                     </div>
-                    {song.videoUrl && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Video</span>
-                        <Badge variant="secondary">
-                          <Video className="h-3 w-3 mr-1" />
-                          Available
-                        </Badge>
-                      </div>
-                    )}
-                    {song.explicit && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Content</span>
-                        <Badge variant="secondary">Explicit</Badge>
-                      </div>
-                    )}
-                    {song.likesCount !== undefined && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Songs</span>
+                      <span className="text-sm">{collection.songs.length}</span>
+                    </div>
+                    {collection.likesCount !== undefined && (
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">Likes</span>
-                        <span className="text-sm">{song.likesCount.toLocaleString()}</span>
+                        <span className="text-sm">{collection.likesCount.toLocaleString()}</span>
                       </div>
                     )}
                   </div>
@@ -335,94 +351,48 @@ export default function SongDetailPage() {
               </CardContent>
             </Card>
 
-            {/* Detailed info */}
+            {/* Song list */}
             <Card className="md:col-span-2">
               <CardHeader>
-                <CardTitle>Song Information</CardTitle>
+                <CardTitle>Songs</CardTitle>
+                <CardDescription>Track list in this {collection.type.toLowerCase()}</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-2">Artist(s)</h4>
-                  <div className="flex items-center space-x-2">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <span>{song.primaryArtistName}</span>
-                  </div>
-                  {song.collaboratorIds && song.collaboratorIds.length > 0 && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      + {song.collaboratorIds.length} collaborator(s)
-                    </p>
-                  )}
-                </div>
-
-                {song.collectionTitle && (
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground mb-2">Collection</h4>
-                    <div className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <Music className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="font-medium">{song.collectionTitle}</p>
-                          {song.collectionType && (
-                            <p className="text-xs text-muted-foreground">
-                              {collectionTypeLabels[song.collectionType as keyof typeof collectionTypeLabels]}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        {song.positionInCollection && (
-                          <Badge variant="outline">Track #{song.positionInCollection}</Badge>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => router.push(`/catalog/collections/${song.collectionId}`)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {song.genres && song.genres.length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground mb-2">Genres</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {song.genres.map((genre, index) => (
-                        <Badge key={index} variant="outline">
-                          {genre}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {song.moods && song.moods.length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground mb-2">Moods</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {song.moods.map((mood, index) => (
-                        <Badge key={index} variant="secondary">
-                          {mood}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <Separator />
-
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-muted-foreground">Created</p>
-                    <p className="font-medium">{formatDateTime(song.createdAt)}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Last Updated</p>
-                    <p className="font-medium">{formatDateTime(song.updatedAt)}</p>
-                  </div>
-                </div>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12">#</TableHead>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Duration</TableHead>
+                      <TableHead className="w-20">Flags</TableHead>
+                      <TableHead className="w-20 text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {collection.songs.map((song) => (
+                      <TableRow key={song.songId}>
+                        <TableCell className="font-medium">{song.position}</TableCell>
+                        <TableCell>{song.title}</TableCell>
+                        <TableCell>{formatDuration(song.durationSeconds)}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-1">
+                            {song.videoUrl && <Video className="h-3 w-3 text-muted-foreground" />}
+                            {song.explicit && <Badge variant="secondary" className="text-xs px-1">E</Badge>}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => router.push(`/catalog/${song.songId}`)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           </div>
@@ -468,7 +438,7 @@ export default function SongDetailPage() {
                           <div className="flex-1">
                             <p className="font-semibold text-red-600 dark:text-red-400">Admin Blocked</p>
                             <p className="text-sm text-muted-foreground mt-0.5">
-                              This content is globally blocked and unavailable to all users in every region.
+                              This collection is globally blocked and unavailable to all users in every region.
                             </p>
                           </div>
                         </div>
@@ -573,51 +543,17 @@ export default function SongDetailPage() {
         <TabsContent value="appearances" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Collection Appearances</CardTitle>
+              <CardTitle>Playlist Appearances</CardTitle>
               <CardDescription>
-                Albums, EPs, Singles, and public Playlists that include this song
+                Public playlists that contain songs from this {collection.type.toLowerCase()}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {song.collectionId && song.collectionTitle ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Title</TableHead>
-                      <TableHead>Position</TableHead>
-                      <TableHead>Owner</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell>
-                        <Badge variant="outline">
-                          {song.collectionType && collectionTypeLabels[song.collectionType as keyof typeof collectionTypeLabels]}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="font-medium">{song.collectionTitle}</TableCell>
-                      <TableCell>{song.positionInCollection || "-"}</TableCell>
-                      <TableCell>{song.primaryArtistName}</TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => router.push(`/catalog/collections/${song.collectionId}`)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              ) : (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Music className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>This song is not part of any collection</p>
-                </div>
-              )}
+              <div className="text-center py-12 text-muted-foreground">
+                <Music className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>Playlist appearance data will be displayed here</p>
+                <p className="text-sm mt-2">Shows playlists containing songs from this collection</p>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -772,39 +708,6 @@ export default function SongDetailPage() {
           </Card>
         </TabsContent>
       </Tabs>
-
-      {/* Modals */}
-      <RegionAvailabilityModal
-        open={regionAvailabilityOpen}
-        onOpenChange={setRegionAvailabilityOpen}
-        contentId={songId}
-        contentType="SONG"
-        contentTitle={song.title}
-        currentBlockedRegions={availability?.blockedRegions || []}
-        onUpdate={handleUpdateAvailability}
-      />
-
-      <BlockContentModal
-        open={blockContentOpen}
-        onOpenChange={setBlockContentOpen}
-        content={{
-          ...song,
-          type: "SONG" as const,
-          contentType: "SONG" as const
-        }}
-        onBlockContent={async (content, reason, comment) => handleBlockContent(reason, comment)}
-      />
-
-      <UnblockContentModal
-        open={unblockContentOpen}
-        onOpenChange={setUnblockContentOpen}
-        content={{
-          ...song,
-          type: "SONG" as const,
-          contentType: "SONG" as const
-        }}
-        onUnblockContent={async (content, comment) => handleUnblockContent(comment)}
-      />
     </div>
   )
 }
