@@ -417,6 +417,7 @@ export default function CatalogPage() {
                   <SelectItem value="SCHEDULED">Scheduled</SelectItem>
                   <SelectItem value="NOT_AVAILABLE_REGION">Region Unavailable</SelectItem>
                   <SelectItem value="BLOCKED_ADMIN">Admin Blocked</SelectItem>
+                  <SelectItem value="DRAFT">Draft</SelectItem>
                 </SelectContent>
               </Select>
               <DatePickerWithRange
