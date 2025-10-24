@@ -20,6 +20,7 @@ const navigation = [
       { name: "Content Metrics", href: "/metrics/content" },
     ],
   },
+  /*
   {
     name: "Availability",
     href: "/availability",
@@ -30,6 +31,7 @@ const navigation = [
       { name: "Blocks", href: "/availability/blocks" },
     ],
   },
+  */
   {
     name: "Catalog",
     href: "/catalog",
