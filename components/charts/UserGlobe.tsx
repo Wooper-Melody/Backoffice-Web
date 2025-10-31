@@ -3,6 +3,8 @@
 import React, { useEffect, useRef, useState } from "react"
 import dynamic from "next/dynamic"
 import { Region, REGION_LABELS } from "@/types/catalog"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Users } from "lucide-react"
 // Note: this component is rendered inside a Card in the page, avoid nesting Card inside Card
 
 export interface UserGlobeProps {
@@ -18,6 +20,8 @@ export interface UserGlobeProps {
 export interface RegionDatum {
   region: string
   users: number
+  // number of blocked content/users in that region (optional from API)
+  blocked?: number
 }
 
 export interface GlobePoint {
@@ -178,10 +182,16 @@ export default function UserGlobe({ height = 600, rotationSpeed = 0.2, cameraDis
   const [points, setPoints] = useState<GlobePoint[]>([])
   const [hovered, setHovered] = useState<GlobePoint | null>(null)
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null)
-  const [summary, setSummary] = useState<{ total: number; global: number; topRegion: { code: string; users: number } | null }>({
+  const [summary, setSummary] = useState<{
+    total: number
+    global: number
+    topRegion: { code: string; users: number } | null
+    mostBlocked?: { code: string; blocked: number } | null
+  }>({
     total: 0,
     global: 0,
     topRegion: null,
+    mostBlocked: null,
   })
 
   // merge colors
@@ -335,19 +345,19 @@ export default function UserGlobe({ height = 600, rotationSpeed = 0.2, cameraDis
       */
 
       const data: RegionDatum[] = [
-        { region: "NAM", users: 680000 },
-        { region: "CAM", users: 456000 },
-        { region: "SAM", users: 312000 },
-        { region: "EUW", users: 240000 },
-        { region: "EUE", users: 180000 },
-        { region: "EUN", users: 90000 },
-        { region: "AFR", users: 150000 },
-        { region: "ASW", users: 200000 },
-        { region: "ASE", users: 400000 },
-        { region: "ASS", users: 250000 },
-        { region: "ASC", users: 80000 },
-        { region: "OCE", users: 50000 },
-        { region: "GLB", users: 300000 },
+        { region: "NAM", users: 680000, blocked: 1200 },
+        { region: "CAM", users: 456000, blocked: 800 },
+        { region: "SAM", users: 312000, blocked: 450 },
+        { region: "EUW", users: 240000, blocked: 600 },
+        { region: "EUE", users: 180000, blocked: 300 },
+        { region: "EUN", users: 90000, blocked: 90 },
+        { region: "AFR", users: 150000, blocked: 270 },
+        { region: "ASW", users: 200000, blocked: 220 },
+        { region: "ASE", users: 400000, blocked: 640 },
+        { region: "ASS", users: 250000, blocked: 310 },
+        { region: "ASC", users: 80000, blocked: 75 },
+        { region: "OCE", users: 50000, blocked: 40 },
+        { region: "GLB", users: 300000, blocked: 150 },
       ]
       // --- MOCK DATA END -------------------------------------------------
 
@@ -386,10 +396,18 @@ export default function UserGlobe({ height = 600, rotationSpeed = 0.2, cameraDis
   // compute summary stats
   const totalUsers = data.reduce((s, r) => s + (r.users || 0), 0)
   const glbUsers = (data.find((d) => (d.region || "").toUpperCase() === "GLB") || { users: 0 }).users || 0
-  // top region excluding GLB
+  // top region excluding GLB by users
   const nonGlb = data.filter((d) => ((d.region || "").toUpperCase() !== "GLB" && (d.region || "").toUpperCase() !== "GLOBAL"))
   const top = nonGlb.sort((a, b) => b.users - a.users)[0]
-  setSummary({ total: totalUsers, global: glbUsers, topRegion: top ? { code: (top.region || "").toUpperCase(), users: top.users } : null })
+  // find region with most blocked items (excluding global)
+  const blockedNonGlb = nonGlb.filter((d) => typeof d.blocked === "number")
+  const topBlocked = blockedNonGlb.sort((a, b) => (b.blocked || 0) - (a.blocked || 0))[0]
+  setSummary({
+    total: totalUsers,
+    global: glbUsers,
+    topRegion: top ? { code: (top.region || "").toUpperCase(), users: top.users } : null,
+    mostBlocked: topBlocked ? { code: (topBlocked.region || "").toUpperCase(), blocked: topBlocked.blocked || 0 } : null,
+  })
 
       // set into globe instance
       const globe = globeRef.current
@@ -468,7 +486,7 @@ export default function UserGlobe({ height = 600, rotationSpeed = 0.2, cameraDis
   }, [height])
 
   return (
-    <div style={{ position: "relative" }} className="flex flex-col lg:flex-row lg:items-start gap-6">
+    <div style={{ position: "relative" }} className="flex flex-col gap-6">
       {/* Left: globe area - let the parent Card provide header/description. Center globe and cap width. */}
       <div ref={wrapperRef} style={{ flex: '1 1 0%', minWidth: 0 }} className="flex justify-center items-start">
         <div style={{ width: "100%" }} className="rounded-md overflow-hidden">
@@ -476,27 +494,61 @@ export default function UserGlobe({ height = 600, rotationSpeed = 0.2, cameraDis
         </div>
       </div>
 
-      {/* Right: simple summary panel (avoid nesting Card inside Card) */}
-      <aside style={{ width: summaryWidth }} className="p-4 rounded-md border">
-        <div className="mb-3">
-          <h3 className="text-sm font-medium">Summary</h3>
+  {/* Summary: placed below the globe and distributed horizontally */}
+  {/* Move summary inside the left wrapper so it sits under the globe and spans full width */}
+
+      {/* Summary row */}
+      <div style={{ width: "100%" }} className="w-full mt-4">
+        <div className="flex gap-4">
+          {/* Card 1: Global users */}
+          <Card className="flex-1">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Global users</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div>
+                <div className="text-2xl font-semibold">{summary.global.toLocaleString()}</div>
+                <div className="text-sm text-muted-foreground mt-1">Users who did not explicitly enter their region</div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Card 2: Top region */}
+          <Card className="flex-1">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Top region</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div>
+                <div className="text-2xl font-semibold">{summary.topRegion ? `${REGION_LABELS[(summary.topRegion.code as Region) || "GLB"] || summary.topRegion.code}` : "—"}</div>
+                <div className="text-sm text-muted-foreground mt-1">{summary.topRegion ? `${summary.topRegion.users.toLocaleString()} users` : "—"}</div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Card 3: Region with most blocks */}
+          <Card className="flex-1">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Region with most blocks</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div>
+                <div className="text-2xl font-semibold">
+                  {summary.mostBlocked && summary.mostBlocked.code
+                    ? `${REGION_LABELS[(summary.mostBlocked.code as Region) || "GLB"] || summary.mostBlocked.code}`
+                    : "—"}
+                </div>
+                <div className="text-sm text-muted-foreground mt-1">
+                  {summary.mostBlocked && typeof summary.mostBlocked.blocked === "number" ? `${summary.mostBlocked.blocked.toLocaleString()} blocks` : "—"}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">Total users</div>
-            <div className="font-semibold">{summary.total.toLocaleString()}</div>
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">Global (GLB)</div>
-            <div className="font-semibold">{summary.global.toLocaleString()}</div>
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">Top region</div>
-            <div className="font-semibold">{summary.topRegion ? `${REGION_LABELS[(summary.topRegion.code as Region) || "GLB"] || summary.topRegion.code} — ${summary.topRegion.users.toLocaleString()}` : "—"}</div>
-          </div>
-        </div>
-        <div className="mt-4 text-xs text-muted-foreground">Regions are approximate. Global users are shown as distributed points.</div>
-      </aside>
+      </div>
 
       {/* Tooltip */}
       {hovered && mousePos ? (
