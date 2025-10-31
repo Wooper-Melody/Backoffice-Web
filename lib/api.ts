@@ -32,34 +32,44 @@ import type {
 // Configure API base URLs based on environment
 function getApiBaseUrls() {
   const env = process.env.NODE_ENV || 'production'
-  
-  if (env === 'development') {
+  // Allow forcing the use of the API gateway even when Next is running in dev mode.
+  // Next's dev server forces NODE_ENV to 'development' so setting NODE_ENV in
+  // `.env.local` won't change that when running `next dev`. Use one of the
+  // override variables below to force gateway behavior during development:
+  // - NEXT_PUBLIC_USE_GATEWAY=true
+  // - NEXT_PUBLIC_FORCE_PROD=true
+  const forceGateway = (process.env.NEXT_PUBLIC_USE_GATEWAY === 'true') || (process.env.NEXT_PUBLIC_FORCE_PROD === 'true')
+
+  console.log(`API Client running in ${env} mode (forceGateway=${forceGateway})`)
+
+  // If we're in development and the user didn't request the gateway, use local
+  // service URLs (defaults provided). If forceGateway is true, fallthrough
+  // to use NEXT_PUBLIC_API_URL as if in production.
+  if (env === 'development' && !forceGateway) {
     return {
       users: process.env.USER_SERVICE || 'http://localhost:8080',
       catalog: process.env.CATALOG_SERVICE || 'http://localhost:30003',
       auth: process.env.AUTH_SERVICE || 'http://localhost:8080', // Auth is part of users service
     }
-  } else {
-    // Production/Staging - use API Gateway
-    const gatewayUrl = process.env.NEXT_PUBLIC_API_URL
-    
-    if (!gatewayUrl) {
-      throw new Error('NEXT_PUBLIC_API_URL environment variable is required for production')
+  }
+
+  // Production/Staging or forced-gateway mode - use API Gateway URL
+  const gatewayUrl = process.env.NEXT_PUBLIC_API_URL
+  if (!gatewayUrl) {
+    throw new Error('NEXT_PUBLIC_API_URL environment variable is required for production or when NEXT_PUBLIC_USE_GATEWAY is enabled')
+  }
+
+  // Validate that the URL is valid and normalize it
+  try {
+    new URL(gatewayUrl)
+    const baseUrl = gatewayUrl.replace(/\/$/, '')
+    return {
+      users: baseUrl,
+      catalog: baseUrl,
+      auth: baseUrl,
     }
-    
-    // Validate that the URL is valid
-    try {
-      new URL(gatewayUrl)
-      // Remove trailing slash if present
-      const baseUrl = gatewayUrl.replace(/\/$/, '')
-      return {
-        users: baseUrl,
-        catalog: baseUrl,
-        auth: baseUrl,
-      }
-    } catch (error) {
-      throw new Error(`NEXT_PUBLIC_API_URL is not a valid URL: ${gatewayUrl}`)
-    }
+  } catch (error) {
+    throw new Error(`NEXT_PUBLIC_API_URL is not a valid URL: ${gatewayUrl}`)
   }
 }
 
