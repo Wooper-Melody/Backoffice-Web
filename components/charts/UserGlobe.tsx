@@ -296,13 +296,10 @@ export default function UserGlobe({ height = 600, rotationSpeed = 0.2, cameraDis
         // ignore if controls not available
       }
 
-      // initial fetch
-      await refreshData()
-      // poll periodically
-      const poll = setInterval(() => refreshData().catch(() => {}), 30_000)
+        // initial fetch (only on mount)
+        await refreshData()
 
       function cleanup() {
-        clearInterval(poll)
         if (rafRef.current) cancelAnimationFrame(rafRef.current)
         try {
           globe.pauseAnimation?.()
