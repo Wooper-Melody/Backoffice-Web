@@ -125,7 +125,7 @@ export default function UserMetricsPage() {
           <CardDescription>Interactive globe showing user distribution per region</CardDescription>
         </CardHeader>
         <CardContent>
-          <UserGlobe height={520} rotationSpeed={0.2} cameraDistance={420} />
+          <UserGlobe height={720} rotationSpeed={0.2} cameraDistance={280} />
         </CardContent>
       </Card>
 

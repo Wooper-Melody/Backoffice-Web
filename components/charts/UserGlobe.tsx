@@ -2,7 +2,8 @@
 
 import React, { useEffect, useRef, useState } from "react"
 import dynamic from "next/dynamic"
-import { Region } from "@/types/catalog"
+import { Region, REGION_LABELS } from "@/types/catalog"
+// Note: this component is rendered inside a Card in the page, avoid nesting Card inside Card
 
 export interface UserGlobeProps {
   height?: number // px
@@ -10,6 +11,8 @@ export interface UserGlobeProps {
   cameraDistance?: number // camera distance (higher = further)
   colors?: Record<string, string>
   autoRotate?: boolean
+  /** Width in px for the right-hand summary panel. The globe will adapt to remaining space. */
+  summaryWidth?: number
 }
 
 export interface RegionDatum {
@@ -166,13 +169,20 @@ export function generateGlobalPoints(globalUsers: number, color = "#999999") {
   return pts
 }
 
-export default function UserGlobe({ height = 600, rotationSpeed = 0.2, cameraDistance = 400, colors = {}, autoRotate = true }: UserGlobeProps) {
+export default function UserGlobe({ height = 600, rotationSpeed = 0.2, cameraDistance = 400, colors = {}, autoRotate = true, summaryWidth = 320 }: UserGlobeProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
+  // wrapperRef references the flex item wrapper so we can observe its computed width
+  const wrapperRef = useRef<HTMLDivElement | null>(null)
   const globeRef = useRef<any>(null)
   const rafRef = useRef<number | null>(null)
   const [points, setPoints] = useState<GlobePoint[]>([])
   const [hovered, setHovered] = useState<GlobePoint | null>(null)
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null)
+  const [summary, setSummary] = useState<{ total: number; global: number; topRegion: { code: string; users: number } | null }>({
+    total: 0,
+    global: 0,
+    topRegion: null,
+  })
 
   // merge colors
   const palette = { ...DEFAULT_COLORS, ...colors }
@@ -187,8 +197,9 @@ export default function UserGlobe({ height = 600, rotationSpeed = 0.2, cameraDis
       Globe = mod.default || mod
       if (!containerRef.current || !mounted) return
 
+      const initialWidth = (wrapperRef.current && wrapperRef.current.offsetWidth) || (containerRef.current && containerRef.current.offsetWidth) || 800
       globe = Globe()(containerRef.current)
-        .width(containerRef.current.offsetWidth)
+        .width(initialWidth)
         .height(height)
         // earth texture; using public CDN from three-globe examples
         .globeImageUrl("https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg")
@@ -372,6 +383,14 @@ export default function UserGlobe({ height = 600, rotationSpeed = 0.2, cameraDis
       const all = [...regionPts, ...globalPts]
       setPoints(all)
 
+  // compute summary stats
+  const totalUsers = data.reduce((s, r) => s + (r.users || 0), 0)
+  const glbUsers = (data.find((d) => (d.region || "").toUpperCase() === "GLB") || { users: 0 }).users || 0
+  // top region excluding GLB
+  const nonGlb = data.filter((d) => ((d.region || "").toUpperCase() !== "GLB" && (d.region || "").toUpperCase() !== "GLOBAL"))
+  const top = nonGlb.sort((a, b) => b.users - a.users)[0]
+  setSummary({ total: totalUsers, global: glbUsers, topRegion: top ? { code: (top.region || "").toUpperCase(), users: top.users } : null })
+
       // set into globe instance
       const globe = globeRef.current
       if (globe) {
@@ -386,8 +405,12 @@ export default function UserGlobe({ height = 600, rotationSpeed = 0.2, cameraDis
         let changed = false
         for (const p of all) {
           if (!p.region) {
-            p.alt = 0.01 + 0.02 * (0.5 + 0.5 * Math.sin(Date.now() / 500 + Math.random()))
-            changed = true
+            const base = p.alt || 0.01
+            const target = base + (Math.sin(Date.now() / 300 + (p.lat + p.lng) % 7) * 0.0025)
+            if (Math.abs((p.alt || 0) - target) > 0.0001) {
+              p.alt = target
+              changed = true
+            }
           }
         }
         if (changed) globe.pointsData(all)
@@ -407,19 +430,73 @@ export default function UserGlobe({ height = 600, rotationSpeed = 0.2, cameraDis
     }
   }
 
-  // update globe when points change (for client resizing etc.)
+  // update globe when points change
   useEffect(() => {
     const globe = globeRef.current
     if (!globe) return
     globe.pointsData(points)
   }, [points])
 
+  // responsive resize observer - adjust globe width when container resizes
+  useEffect(() => {
+    const obsTarget = wrapperRef.current || containerRef.current
+    if (!obsTarget) return
+    let globe = globeRef.current
+    let ro: ResizeObserver | null = null
+    try {
+      ro = new ResizeObserver(() => {
+        if (!globe) globe = globeRef.current
+        if (!globe || !obsTarget) return
+        const w = obsTarget.offsetWidth
+        globe.width(w)
+        globe.height(height)
+      })
+      ro.observe(obsTarget)
+    } catch (e) {
+      // ResizeObserver not supported — fallback to window resize
+      const onResize = () => {
+        if (!globe) globe = globeRef.current
+        if (!globe || !obsTarget) return
+        const w = obsTarget.offsetWidth
+        globe.width(w)
+        globe.height(height)
+      }
+      window.addEventListener("resize", onResize)
+      return () => window.removeEventListener("resize", onResize)
+    }
+    return () => ro && ro.disconnect()
+  }, [height])
+
   return (
-    <div style={{ position: "relative" }}>
-      <div
-        ref={containerRef}
-        style={{ width: "100%", height: `${height}px`, borderRadius: 8, overflow: "hidden" }}
-      />
+    <div style={{ position: "relative" }} className="flex flex-col lg:flex-row lg:items-start gap-6">
+      {/* Left: globe area - let the parent Card provide header/description. Center globe and cap width. */}
+      <div ref={wrapperRef} style={{ flex: '1 1 0%', minWidth: 0 }} className="flex justify-center items-start">
+        <div style={{ width: "100%" }} className="rounded-md overflow-hidden">
+          <div ref={containerRef} style={{ width: "100%", height: `${height}px`, borderRadius: 8, overflow: "hidden" }} />
+        </div>
+      </div>
+
+      {/* Right: simple summary panel (avoid nesting Card inside Card) */}
+      <aside style={{ width: summaryWidth }} className="p-4 rounded-md border">
+        <div className="mb-3">
+          <h3 className="text-sm font-medium">Summary</h3>
+        </div>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">Total users</div>
+            <div className="font-semibold">{summary.total.toLocaleString()}</div>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">Global (GLB)</div>
+            <div className="font-semibold">{summary.global.toLocaleString()}</div>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">Top region</div>
+            <div className="font-semibold">{summary.topRegion ? `${REGION_LABELS[(summary.topRegion.code as Region) || "GLB"] || summary.topRegion.code} — ${summary.topRegion.users.toLocaleString()}` : "—"}</div>
+          </div>
+        </div>
+        <div className="mt-4 text-xs text-muted-foreground">Regions are approximate. Global users are shown as distributed points.</div>
+      </aside>
 
       {/* Tooltip */}
       {hovered && mousePos ? (
@@ -438,7 +515,7 @@ export default function UserGlobe({ height = 600, rotationSpeed = 0.2, cameraDis
             maxWidth: 260,
           }}
         >
-          <div style={{ fontWeight: 600 }}>{hovered.region || "Global"}</div>
+          <div style={{ fontWeight: 600 }}>{REGION_LABELS[((hovered.region as Region) || "GLB") as Region] || hovered.region || "Global"}</div>
           {typeof hovered.users === "number" ? (
             <div style={{ opacity: 0.9 }}>{hovered.users.toLocaleString()} users</div>
           ) : null}
