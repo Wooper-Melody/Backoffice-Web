@@ -19,7 +19,8 @@ import {
   Pie,
   Cell,
 } from "recharts"
-import { Users, UserPlus, UserCheck, Clock, Download, TrendingUp, TrendingDown } from "lucide-react"
+import { Users, UserPlus, UserCheck, Clock, Download, TrendingUp, TrendingDown, UsersIcon } from "lucide-react"
+import UserGlobe from "@/components/charts/UserGlobe"
 
 const userStats = [
   {
@@ -123,7 +124,7 @@ export default function UserMetricsPage() {
           <Card key={stat.label}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{stat.label}</CardTitle>
-              <stat.icon className="h-4 w-4 text-muted-foreground" />
+              <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stat.value}</div>
@@ -140,6 +141,17 @@ export default function UserMetricsPage() {
           </Card>
         ))}
       </div>
+
+      {/* Globe visualization */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Users by region</CardTitle>
+          <CardDescription>Interactive globe showing user distribution per region</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <UserGlobe height={550} rotationSpeed={0.2} cameraDistance={280} />
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Daily Active Users */}
