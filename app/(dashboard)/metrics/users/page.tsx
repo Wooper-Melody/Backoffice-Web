@@ -20,6 +20,7 @@ import {
   Cell,
 } from "recharts"
 import { Users, UserPlus, UserCheck, Clock, Download, TrendingUp, TrendingDown } from "lucide-react"
+import UserGlobe from "@/components/charts/UserGlobe"
 
 const userStats = [
   {
@@ -116,6 +117,17 @@ export default function UserMetricsPage() {
           </Button>
         </div>
       </div>
+
+      {/* Globe visualization */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Users by region</CardTitle>
+          <CardDescription>Interactive globe showing user distribution per region</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <UserGlobe height={520} rotationSpeed={0.2} cameraDistance={420} />
+        </CardContent>
+      </Card>
 
       {/* User Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
