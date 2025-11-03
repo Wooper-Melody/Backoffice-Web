@@ -45,9 +45,18 @@ import { ViewUserModal } from "@/components/modals/view-user-modal"
 import { BlockUserModal } from "@/components/modals/block-user-modal"
 import { UnblockUserModal } from "@/components/modals/unblock-user-modal"
 import { DeleteUserModal } from "@/components/modals/delete-user-modal"
+import { MetricDetailModal } from "@/components/modals/metric-detail-modal"
 import { useUsers } from "@/hooks/use-users"
 import { useAuth } from "@/components/auth/auth-provider"
+import { useAdminUserMetrics } from "@/hooks/use-metrics"
 import type { UserAdminResponse } from "@/types/users"
+import { TrendingUp, TrendingDown, Download } from "lucide-react"
+import {
+  exportTotalUsersMetrics,
+  exportRoleDistributionMetrics,
+  exportBlockedUsersMetrics,
+  exportRecentSignUpsMetrics,
+} from "@/lib/export-metrics"
 
 const roleColors = {
   ADMIN: "bg-purple-500/10 text-purple-500 border-purple-500/20",
@@ -92,6 +101,25 @@ export default function UsersPage() {
   } = useUsers()
 
   const { user: currentUser } = useAuth()
+
+  // Get metrics for dashboard cards
+  const { 
+    totalUsers: totalUsersMetrics, 
+    recentSignUps,
+    roleDistribution: roleDistributionMetrics,
+    blockedUsers: blockedUsersMetrics
+  } = useAdminUserMetrics("LAST_MONTH")
+
+  // State for metric detail modal
+  const [metricDetailOpen, setMetricDetailOpen] = useState(false)
+  const [metricDetailType, setMetricDetailType] = useState<
+    | "total-users"
+    | "role-distribution"
+    | "blocked-users"
+    | "recent-signups"
+    | null
+  >(null)
+  const [metricDetailData, setMetricDetailData] = useState<any>(null)
 
   // Check if a user is the current logged-in user
   const isCurrentUser = (user: UserAdminResponse) => {
@@ -236,15 +264,96 @@ export default function UsersPage() {
     return success
   }
 
-  // Statistics
-  const listenersCount = filteredUsers.filter((u) => u.role === "LISTENER").length
-  const artistsCount = filteredUsers.filter((u) => u.role === "ARTIST").length
-  const adminCount = filteredUsers.filter((u) => u.role === "ADMIN").length
-  const blockedCount = filteredUsers.filter((u) => u.isBlocked).length
+  // Handler for opening metric detail modal
+  const handleMetricCardClick = (
+    type: "total-users" | "role-distribution" | "blocked-users" | "recent-signups",
+    data: any
+  ) => {
+    setMetricDetailType(type)
+    setMetricDetailData(data)
+    setMetricDetailOpen(true)
+  }
 
-  // Most recent signup
-  const mostRecentUser = [...filteredUsers]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0] || null
+  // Handler for exporting individual metric
+  const handleExportMetric = (
+    type: "total-users" | "role-distribution" | "blocked-users" | "recent-signups",
+    format: "csv" | "excel"
+  ) => {
+    switch (type) {
+      case "total-users":
+        if (totalUsersMetrics) exportTotalUsersMetrics(totalUsersMetrics, "LAST_MONTH", format)
+        break
+      case "role-distribution":
+        if (roleDistributionMetrics) exportRoleDistributionMetrics(roleDistributionMetrics, "LAST_MONTH", format)
+        break
+      case "blocked-users":
+        if (blockedUsersMetrics) exportBlockedUsersMetrics(blockedUsersMetrics, "LAST_MONTH", format)
+        break
+      case "recent-signups":
+        if (recentSignUps) exportRecentSignUpsMetrics(recentSignUps, format)
+        break
+    }
+  }
+
+  // Handler for exporting users table
+  const handleExportUsersTable = (format: "csv" | "excel") => {
+    // Export the current filtered users table
+    const headers = ["ID", "Name", "Username", "Email", "Role", "Status", "Created At"]
+    const rows = filteredUsers.map((user) => [
+      user.id,
+      [user.firstName, user.lastName].filter(Boolean).join(" ") || "-",
+      user.username || "-",
+      user.email,
+      user.role,
+      user.isBlocked ? "Blocked" : "Active",
+      new Date(user.createdAt).toISOString(),
+    ])
+
+    const csvData = [headers, ...rows]
+    const csv = csvData.map((row) => row.map((cell) => `"${cell}"`).join(",")).join("\n")
+    
+    const filename = `users-table-${Date.now()}.${format === "csv" ? "csv" : "xls"}`
+    const blob = new Blob([csv], { 
+      type: format === "csv" ? "text/csv;charset=utf-8;" : "application/vnd.ms-excel" 
+    })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
+  // Get role counts from metrics API
+  const listenersCount = roleDistributionMetrics?.totalRoleDistribution.find((r) => r.role === "LISTENER")?.count || 0
+  const artistsCount = roleDistributionMetrics?.totalRoleDistribution.find((r) => r.role === "ARTIST")?.count || 0
+  const adminCount = roleDistributionMetrics?.totalRoleDistribution.find((r) => r.role === "ADMIN")?.count || 0
+
+  // Get blocked count from metrics API
+  const blockedCount = blockedUsersMetrics?.totalBlockedUsers || 0
+
+  // Recent signup from metrics API (for display card)
+  const recentSignup = recentSignUps?.lastListener || recentSignUps?.lastArtist
+
+  const renderChangePercentage = (change: number) => {
+    const isPositive = change >= 0
+    return (
+      <div className="flex items-center space-x-1 text-xs">
+        {isPositive ? (
+          <TrendingUp className="h-3 w-3 text-green-500" />
+        ) : (
+          <TrendingDown className="h-3 w-3 text-red-500" />
+        )}
+        <span className={isPositive ? "text-green-500" : "text-red-500"}>
+          {isPositive ? "+" : ""}
+          {change.toFixed(2)}%
+        </span>
+        <span className="text-muted-foreground">vs last month</span>
+      </div>
+    )
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -256,10 +365,7 @@ export default function UsersPage() {
         </div>
         <div className="flex items-center space-x-2">
           <ExportMenu
-            onExport={(format) => {
-              console.log(`Exporting users data as ${format}`)
-              // Implement export logic for users
-            }}
+            onExport={(format) => handleExportUsersTable(format)}
           />
           <Button onClick={() => setCreateUserOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
@@ -270,62 +376,141 @@ export default function UsersPage() {
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Card>
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-shadow"
+          onClick={() => totalUsersMetrics && handleMetricCardClick("total-users", totalUsersMetrics)}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{new Intl.NumberFormat('es-ES').format(totalElements)}</div>
-            <p className="text-xs text-muted-foreground">Accounts registered</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Role Distribution</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <div className="flex items-center space-x-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExportMetric("total-users", "csv") }}>
+                    CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExportMetric("total-users", "excel") }}>
+                    Excel
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {new Intl.NumberFormat('es-ES').format(listenersCount)} / {new Intl.NumberFormat('es-ES').format(artistsCount)} / {new Intl.NumberFormat('es-ES').format(adminCount)}
+              {totalUsersMetrics ? new Intl.NumberFormat('en-US').format(totalUsersMetrics.totalUsers) : new Intl.NumberFormat('en-US').format(totalElements)}
+            </div>
+            {totalUsersMetrics && renderChangePercentage(totalUsersMetrics.changePercentage)}
+            {!totalUsersMetrics && <p className="text-xs text-muted-foreground">Accounts registered</p>}
+          </CardContent>
+        </Card>
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-shadow"
+          onClick={() => roleDistributionMetrics && handleMetricCardClick("role-distribution", roleDistributionMetrics)}
+        >
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Role Distribution</CardTitle>
+            <div className="flex items-center space-x-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExportMetric("role-distribution", "csv") }}>
+                    CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExportMetric("role-distribution", "excel") }}>
+                    Excel
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {new Intl.NumberFormat('en-US').format(listenersCount)} / {new Intl.NumberFormat('en-US').format(artistsCount)} / {new Intl.NumberFormat('en-US').format(adminCount)}
             </div>
             <p className="text-xs text-muted-foreground">Listeners / Artists / Admins</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-shadow"
+          onClick={() => blockedUsersMetrics && handleMetricCardClick("blocked-users", blockedUsersMetrics)}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Blocked Users</CardTitle>
-            <UserX className="h-4 w-4 text-muted-foreground" />
+            <div className="flex items-center space-x-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExportMetric("blocked-users", "csv") }}>
+                    CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExportMetric("blocked-users", "excel") }}>
+                    Excel
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <UserX className="h-4 w-4 text-muted-foreground" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{blockedCount}</div>
+            <div className="text-2xl font-bold">{new Intl.NumberFormat('en-US').format(blockedCount)}</div>
             <p className="text-xs text-muted-foreground">Blocked Accounts</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-shadow"
+          onClick={() => recentSignUps && handleMetricCardClick("recent-signups", recentSignUps)}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Most Recent Signup</CardTitle>
-            <Plus className="h-4 w-4 text-muted-foreground" />
+            <div className="flex items-center space-x-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExportMetric("recent-signups", "csv") }}>
+                    CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExportMetric("recent-signups", "excel") }}>
+                    Excel
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Plus className="h-4 w-4 text-muted-foreground" />
+            </div>
           </CardHeader>
           <CardContent>
-            {mostRecentUser ? (
+            {recentSignup ? (
               <div className="flex items-center space-x-3">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={mostRecentUser.profilePictureUrl || "/placeholder-user.jpg"} alt={mostRecentUser.username ?? `${mostRecentUser.firstName ?? ''} ${mostRecentUser.lastName ?? ''}`.trim()} />
                   <AvatarFallback>
-                    {((mostRecentUser.firstName ?? mostRecentUser.username ?? '') as string)
-                      .split(' ')
-                      .map((n: string) => n[0])
-                      .join('')}
+                    {recentSignup.username.substring(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <div className="font-medium">{[mostRecentUser.firstName, mostRecentUser.lastName].filter(Boolean).join(' ') || mostRecentUser.username}</div>
-                  <div className="text-xs text-muted-foreground">{new Date(mostRecentUser.createdAt).toLocaleDateString('es-ES')}</div>
+                  <div className="font-medium">{recentSignup.username}</div>
+                  <div className="text-xs text-muted-foreground">{new Date(recentSignup.createdAt).toLocaleDateString('en-US')}</div>
                 </div>
               </div>
             ) : (
-              <div className="text-sm text-muted-foreground">No records</div>
+              <div className="text-sm text-muted-foreground">No recent signups</div>
             )}
           </CardContent>
         </Card>
@@ -641,6 +826,16 @@ export default function UsersPage() {
         user={selectedUser}
         onDeleteUser={handleDeleteUser}
       />
+
+      {metricDetailType && (
+        <MetricDetailModal
+          open={metricDetailOpen}
+          onOpenChange={setMetricDetailOpen}
+          type={metricDetailType}
+          data={metricDetailData}
+          period="Last Month"
+        />
+      )}
     </div>
   )
 }

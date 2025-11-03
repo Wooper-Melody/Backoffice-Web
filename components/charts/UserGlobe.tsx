@@ -15,6 +15,8 @@ export interface UserGlobeProps {
   autoRotate?: boolean
   /** Width in px for the right-hand summary panel. The globe will adapt to remaining space. */
   summaryWidth?: number
+  /** External data to use instead of fetching from API (optional) */
+  data?: RegionDatum[]
 }
 
 export interface RegionDatum {
@@ -173,7 +175,7 @@ export function generateGlobalPoints(globalUsers: number, color = "#999999") {
   return pts
 }
 
-export default function UserGlobe({ height = 600, rotationSpeed = 0.2, cameraDistance = 400, colors = {}, autoRotate = true, summaryWidth = 320 }: UserGlobeProps) {
+export default function UserGlobe({ height = 600, rotationSpeed = 0.4, cameraDistance = 400, colors = {}, autoRotate = true, summaryWidth = 320, data }: UserGlobeProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   // wrapperRef references the flex item wrapper so we can observe its computed width
   const wrapperRef = useRef<HTMLDivElement | null>(null)
@@ -193,6 +195,11 @@ export default function UserGlobe({ height = 600, rotationSpeed = 0.2, cameraDis
     topRegion: null,
     mostBlocked: null,
   })
+  
+  // Cache for generated global points to avoid regenerating on every render
+  const globalPointsCacheRef = useRef<Map<number, GlobePoint[]>>(new Map())
+  // Flag to prevent multiple simultaneous refreshData calls
+  const isRefreshingRef = useRef(false)
 
   // merge colors
   const palette = { ...DEFAULT_COLORS, ...colors }
@@ -302,6 +309,12 @@ export default function UserGlobe({ height = 600, rotationSpeed = 0.2, cameraDis
       function cleanup() {
         if (rafRef.current) cancelAnimationFrame(rafRef.current)
         try {
+          // Cleanup pulse animation
+          const container = containerRef.current as any
+          if (container?._pulseCleanup) {
+            container._pulseCleanup()
+          }
+          
           globe.pauseAnimation?.()
           globe.renderer()?.dispose?.()
         } catch (e) {}
@@ -331,40 +344,54 @@ export default function UserGlobe({ height = 600, rotationSpeed = 0.2, cameraDis
 
   // refresh data from API and update globe
   async function refreshData() {
+    // Prevent multiple simultaneous calls
+    if (isRefreshingRef.current) {
+      return
+    }
+    isRefreshingRef.current = true
+    
     try {
-      // --- MOCK DATA START -----------------------------------------------
-      // The real API call is commented out below. Use the mock while backend
-      // is not available or for local development.
-      /*
-      const res = await fetch("/api/stats/users-by-region")
-      if (!res.ok) throw new Error("fetch failed")
-      const data: RegionDatum[] = await res.json()
-      */
+      // Use external data if provided, otherwise use mock data
+      let regionData: RegionDatum[]
+      
+      if (data && data.length > 0) {
+        // Use external data passed as prop
+        regionData = data
+      } else {
+        // --- MOCK DATA START -----------------------------------------------
+        // The real API call is commented out below. Use the mock while backend
+        // is not available or for local development.
+        /*
+        const res = await fetch("/api/stats/users-by-region")
+        if (!res.ok) throw new Error("fetch failed")
+        regionData = await res.json()
+        */
 
-      const data: RegionDatum[] = [
-        { region: "NAM", users: 680000, blocked: 1200 },
-        { region: "CAM", users: 456000, blocked: 800 },
-        { region: "SAM", users: 312000, blocked: 450 },
-        { region: "EUW", users: 240000, blocked: 600 },
-        { region: "EUE", users: 180000, blocked: 300 },
-        { region: "EUN", users: 90000, blocked: 90 },
-        { region: "AFR", users: 150000, blocked: 270 },
-        { region: "ASW", users: 200000, blocked: 220 },
-        { region: "ASE", users: 400000, blocked: 640 },
-        { region: "ASS", users: 250000, blocked: 310 },
-        { region: "ASC", users: 80000, blocked: 75 },
-        { region: "OCE", users: 50000, blocked: 40 },
-        { region: "GLB", users: 300000, blocked: 150 },
-      ]
-      // --- MOCK DATA END -------------------------------------------------
+        regionData = [
+          { region: "NAM", users: 680000, blocked: 1200 },
+          { region: "CAM", users: 456000, blocked: 800 },
+          { region: "SAM", users: 312000, blocked: 450 },
+          { region: "EUW", users: 240000, blocked: 600 },
+          { region: "EUE", users: 180000, blocked: 300 },
+          { region: "EUN", users: 90000, blocked: 90 },
+          { region: "AFR", users: 150000, blocked: 270 },
+          { region: "ASW", users: 200000, blocked: 220 },
+          { region: "ASE", users: 400000, blocked: 640 },
+          { region: "ASS", users: 250000, blocked: 310 },
+          { region: "ASC", users: 80000, blocked: 75 },
+          { region: "OCE", users: 50000, blocked: 40 },
+          { region: "GLB", users: 300000, blocked: 150 },
+        ]
+        // --- MOCK DATA END -------------------------------------------------
+      }
 
       // normalize data: look for GLB entry
-      const maxUsers = Math.max(...data.map((d) => d.users), 1)
+      const maxUsers = Math.max(...regionData.map((d) => d.users), 1)
       const sizeScale = linearScale([0, maxUsers], [0.3, 3.5])
 
       const regionPts: GlobePoint[] = []
       let globalUsers = 0
-      for (const row of data) {
+      for (const row of regionData) {
         const code = (row.region || "").toUpperCase()
         if (code === "GLB" || code === "GLOBAL") {
           globalUsers = row.users
@@ -385,16 +412,23 @@ export default function UserGlobe({ height = 600, rotationSpeed = 0.2, cameraDis
         }
       }
 
-  const globalPts = await generateGlobalPointsAsync(globalUsers, palette.GLB || "#999999")
+      // Use cached global points if available for the same globalUsers count
+      let globalPts: GlobePoint[] = []
+      if (globalPointsCacheRef.current.has(globalUsers)) {
+        globalPts = globalPointsCacheRef.current.get(globalUsers)!
+      } else {
+        globalPts = await generateGlobalPointsAsync(globalUsers, palette.GLB || "#999999")
+        globalPointsCacheRef.current.set(globalUsers, globalPts)
+      }
 
       const all = [...regionPts, ...globalPts]
       setPoints(all)
 
   // compute summary stats
-  const totalUsers = data.reduce((s, r) => s + (r.users || 0), 0)
-  const glbUsers = (data.find((d) => (d.region || "").toUpperCase() === "GLB") || { users: 0 }).users || 0
+  const totalUsers = regionData.reduce((s, r) => s + (r.users || 0), 0)
+  const glbUsers = (regionData.find((d) => (d.region || "").toUpperCase() === "GLB") || { users: 0 }).users || 0
   // top region excluding GLB by users
-  const nonGlb = data.filter((d) => ((d.region || "").toUpperCase() !== "GLB" && (d.region || "").toUpperCase() !== "GLOBAL"))
+  const nonGlb = regionData.filter((d) => ((d.region || "").toUpperCase() !== "GLB" && (d.region || "").toUpperCase() !== "GLOBAL"))
   const top = nonGlb.sort((a, b) => b.users - a.users)[0]
   // find region with most blocked items (excluding global)
   const blockedNonGlb = nonGlb.filter((d) => typeof d.blocked === "number")
@@ -412,15 +446,23 @@ export default function UserGlobe({ height = 600, rotationSpeed = 0.2, cameraDis
         globe.pointsData(all)
       }
 
-      // tiny pulsing for global points
+      // Store reference to points array for pulse animation
+      // This avoids triggering React re-renders
+      const pointsArrayRef = all
+      
+      // tiny pulsing for global points - optimized to avoid re-renders
       let pulseRunning = true
+      let pulseTimeoutId: any = null
+      
       const pulse = () => {
         if (!globe || !pulseRunning) return
-        // tweak alt for global points
+        
+        // tweak alt for global points directly on the array
+        // This modifies the objects in place without creating new references
         let changed = false
-        for (const p of all) {
+        for (const p of pointsArrayRef) {
           if (!p.region) {
-            const base = p.alt || 0.01
+            const base = 0.01 // Use consistent base instead of reading p.alt
             const target = base + (Math.sin(Date.now() / 300 + (p.lat + p.lng) % 7) * 0.0025)
             if (Math.abs((p.alt || 0) - target) > 0.0001) {
               p.alt = target
@@ -428,29 +470,53 @@ export default function UserGlobe({ height = 600, rotationSpeed = 0.2, cameraDis
             }
           }
         }
-        if (changed) globe.pointsData(all)
-        setTimeout(pulse, 300 + Math.random() * 200)
+        
+        // Only update globe, don't trigger React state updates
+        if (changed && globe) {
+          globe.pointsData(pointsArrayRef)
+        }
+        
+        pulseTimeoutId = setTimeout(pulse, 300 + Math.random() * 200)
       }
+      
+      // Start pulse animation
       pulse()
 
-      // stop pulse after some time when page unmounts
-      setTimeout(() => {
+      // stop pulse after 30 seconds and cleanup
+      const stopPulseTimeoutId = setTimeout(() => {
         pulseRunning = false
+        if (pulseTimeoutId) clearTimeout(pulseTimeoutId)
       }, 30_000)
+      
+      // Store cleanup function
+      ;(containerRef.current as any)._pulseCleanup = () => {
+        pulseRunning = false
+        if (pulseTimeoutId) clearTimeout(pulseTimeoutId)
+        if (stopPulseTimeoutId) clearTimeout(stopPulseTimeoutId)
+      }
 
       return all
     } catch (e) {
       console.error("UserGlobe: failed to load data", e)
       return []
+    } finally {
+      isRefreshingRef.current = false
     }
   }
 
-  // update globe when points change
+  // refresh data when external data prop changes
+  // Use a serialized version of data to avoid infinite loops
+  const dataKey = React.useMemo(() => {
+    if (!data || data.length === 0) return null
+    return JSON.stringify(data.map(d => ({ region: d.region, users: d.users, blocked: d.blocked })))
+  }, [data])
+
   useEffect(() => {
-    const globe = globeRef.current
-    if (!globe) return
-    globe.pointsData(points)
-  }, [points])
+    if (dataKey) {
+      refreshData()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataKey])
 
   // responsive resize observer - adjust globe width when container resizes
   useEffect(() => {

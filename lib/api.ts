@@ -7,7 +7,14 @@ import type {
   UpdateUserRequest,
   Page,
   UsersFilters,
-  UsersPageData
+  UsersPageData,
+  MetricPeriod,
+  TotalUsersMetrics,
+  RoleDistributionMetrics,
+  RecentSignUpsMetrics,
+  NewSignUpsMetrics,
+  BlockedUsersMetrics,
+  ActiveUsersMetrics
 } from "@/types/users"
 
 import type {
@@ -456,6 +463,31 @@ class ApiClient {
     return this.request(`/users/admin/${userId}`, {
       method: "DELETE",
     })
+  }
+
+  // User Metrics Admin API
+  async getTotalUsersMetrics(period: MetricPeriod): Promise<TotalUsersMetrics> {
+    return this.request(`/users/admin/metrics/total-users?period=${period}`)
+  }
+
+  async getRoleDistributionMetrics(period: MetricPeriod): Promise<RoleDistributionMetrics> {
+    return this.request(`/users/admin/metrics/role-distribution?period=${period}`)
+  }
+
+  async getRecentSignUpsMetrics(): Promise<RecentSignUpsMetrics> {
+    return this.request("/users/admin/metrics/recent-signups")
+  }
+
+  async getNewSignUpsMetrics(period: MetricPeriod): Promise<NewSignUpsMetrics> {
+    return this.request(`/users/admin/metrics/new-signups?period=${period}`)
+  }
+
+  async getBlockedUsersMetrics(period: MetricPeriod): Promise<BlockedUsersMetrics> {
+    return this.request(`/users/admin/metrics/blocked-users?period=${period}`)
+  }
+
+  async getActiveUsersMetrics(period: MetricPeriod): Promise<ActiveUsersMetrics> {
+    return this.request(`/users/admin/metrics/active-users?period=${period}`)
   }
 }
 
