@@ -110,3 +110,62 @@ export interface UsersPageData {
   last: boolean
   empty: boolean
 }
+
+// User Metrics Types
+export type MetricPeriod = "LAST_DAY" | "LAST_WEEK" | "LAST_MONTH"
+
+export interface RegionalMetric {
+  region: string
+  count: number
+}
+
+export interface TotalUsersMetrics {
+  totalUsers: number
+  regionalBreakdown: RegionalMetric[]
+  changePercentage: number
+}
+
+export interface RoleMetric {
+  role: "LISTENER" | "ARTIST" | "ADMIN" | "UNDECLARED"
+  count: number
+}
+
+export interface RoleRegionalMetric {
+  role: "LISTENER" | "ARTIST" | "ADMIN" | "UNDECLARED"
+  region: string
+  count: number
+}
+
+export interface RoleDistributionMetrics {
+  totalRoleDistribution: RoleMetric[]
+  regionalRoleDistribution: RoleRegionalMetric[]
+  changePercentage: number
+}
+
+export interface RecentSignUp {
+  id: string
+  username: string
+  email: string
+  createdAt: string
+}
+
+export interface RecentSignUpsMetrics {
+  lastArtist: RecentSignUp | null
+  lastListener: RecentSignUp | null
+}
+
+export interface NewSignUpsMetrics {
+  newSignUps: number
+  changePercentage: number
+}
+
+export interface BlockedUsersMetrics {
+  totalBlockedUsers: number
+  regionalBreakdown: RegionalMetric[]
+  changePercentage: number
+}
+
+export interface ActiveUsersMetrics {
+  activeUsers: number
+  changePercentage: number
+}
