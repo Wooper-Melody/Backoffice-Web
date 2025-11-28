@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -26,6 +27,13 @@ export default function AvailabilityPage() {
   const [unblockContentOpen, setUnblockContentOpen] = useState(false)
   const [selectedRegion, setSelectedRegion] = useState<any>(null)
   const [selectedContent, setSelectedContent] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    // Simulate data loading
+    const timer = setTimeout(() => setLoading(false), 800)
+    return () => clearTimeout(timer)
+  }, [])
 
   return (
     <div className="p-6 space-y-6">
@@ -37,6 +45,39 @@ export default function AvailabilityPage() {
         </div>
       </div>
 
+      {loading ? (
+        <div className="space-y-6">
+          {/* Stats Cards Loading */}
+          <div className="grid gap-4 md:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i}>
+                <CardHeader>
+                  <Skeleton className="h-4 w-32" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-8 w-24 mb-2" />
+                  <Skeleton className="h-3 w-16" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          {/* Tabs Loading */}
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-10 w-full" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <Skeleton className="h-16 w-full" />
+                {[1, 2, 3, 4].map((i) => (
+                  <Skeleton key={i} className="h-16 w-full" />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        <>
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-4">
         {availabilityStats.map((stat) => (
@@ -141,6 +182,8 @@ export default function AvailabilityPage() {
           </div>
         </TabsContent>
       </Tabs>
+      </>
+      )}
 
       {/* Modals */}
       <EditRegionModal

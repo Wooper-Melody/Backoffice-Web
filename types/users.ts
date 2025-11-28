@@ -1,5 +1,41 @@
 // Types for User Management API based on OpenAPI schema
 
+export interface ArtistProfileResponse {
+  userId: string
+  artistName: string
+  bio?: string
+  bannerImageUrl?: string
+  instagramUrl?: string
+  twitterUrl?: string
+  facebookUrl?: string
+  youtubeUrl?: string
+  spotifyUrl?: string
+  appleMusicUrl?: string
+  soundcloudUrl?: string
+  websiteUrl?: string
+}
+
+export interface UserProfileResponse {
+  id: string
+  email: string
+  username: string
+  role: "LISTENER" | "ARTIST" | "ADMIN" | "UNDECLARED"
+  region?: string
+  isBlocked: boolean
+  firstName?: string
+  lastName?: string
+  phoneNumber?: string
+  address?: string
+  isFollowed?: boolean
+  isFollowing?: boolean
+  followersCount: number
+  followingCount: number
+  profilePictureUrl?: string
+  bio?: string
+  createdAt: string
+  artistProfile?: ArtistProfileResponse
+}
+
 export interface UserAdminResponse {
   id: string
   email: string
