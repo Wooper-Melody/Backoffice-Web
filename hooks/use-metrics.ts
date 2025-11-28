@@ -3,6 +3,7 @@
 import { useState } from "react"
 import useSWR from "swr"
 import { api } from "@/lib/api"
+import { getFirebaseStorageUrl } from "@/lib/storage"
 import type { MetricPeriod } from "@/types/users"
 
 export function useMetrics(initialTimeRange = "30d") {
@@ -74,6 +75,100 @@ export function useArtistMetrics(artistId?: string, initialTimeRange = "30d") {
     error,
     timeRange,
     setTimeRange,
+  }
+}
+
+// Detailed Artist Metrics Hooks with date range filters
+export function useArtistDetailedMetrics(
+  artistId: string | null,
+  startDate: string,
+  endDate: string,
+  region?: string
+) {
+  const filters = { startDate, endDate, region }
+  const shouldFetch = !!artistId && !!startDate && !!endDate
+
+  // Artist Overview
+  const { data: overview, error: overviewError, isLoading: overviewLoading } = useSWR(
+    shouldFetch ? ["artist-overview", artistId, startDate, endDate, region] : null,
+    () => api.getArtistOverview(artistId!, filters),
+    {
+      refreshInterval: 60000,
+      revalidateOnFocus: false,
+    }
+  )
+
+  // Top Songs
+  const { data: topSongs, error: topSongsError, isLoading: topSongsLoading } = useSWR(
+    shouldFetch ? ["artist-top-songs", artistId, startDate, endDate, region] : null,
+    () => api.getArtistTopSongs(artistId!, filters),
+    {
+      refreshInterval: 60000,
+      revalidateOnFocus: false,
+    }
+  )
+
+  // Top Playlists
+  const { data: topPlaylists, error: topPlaylistsError, isLoading: topPlaylistsLoading } = useSWR(
+    shouldFetch ? ["artist-top-playlists", artistId, startDate, endDate, region] : null,
+    () => api.getArtistTopPlaylists(artistId!, filters),
+    {
+      refreshInterval: 60000,
+      revalidateOnFocus: false,
+    }
+  )
+
+  // Top Collections
+  const { data: topCollections, error: topCollectionsError, isLoading: topCollectionsLoading } = useSWR(
+    shouldFetch ? ["artist-top-collections", artistId, startDate, endDate, region] : null,
+    () => api.getArtistTopCollections(artistId!, filters),
+    {
+      refreshInterval: 60000,
+      revalidateOnFocus: false,
+    }
+  )
+
+  // Market Distribution
+  const { data: markets, error: marketsError, isLoading: marketsLoading } = useSWR(
+    shouldFetch ? ["artist-markets", artistId, startDate, endDate] : null,
+    () => api.getArtistMarkets(artistId!, filters, 10),
+    {
+      refreshInterval: 60000,
+      revalidateOnFocus: false,
+    }
+  )
+
+  // History (time-series data)
+  const { data: history, error: historyError, isLoading: historyLoading } = useSWR(
+    shouldFetch ? ["artist-history", artistId, startDate, endDate, region] : null,
+    () => api.getArtistHistory(artistId!, filters),
+    {
+      refreshInterval: 60000,
+      revalidateOnFocus: false,
+    }
+  )
+
+  const isLoading = overviewLoading || topSongsLoading || topPlaylistsLoading || 
+                    topCollectionsLoading || marketsLoading || historyLoading
+
+  const error = overviewError || topSongsError || topPlaylistsError || 
+                topCollectionsError || marketsError || historyError
+
+  // Transform avatar URL if overview exists
+  const transformedOverview = overview ? {
+    ...overview,
+    avatarUrl: getFirebaseStorageUrl(overview.avatarUrl) || overview.avatarUrl
+  } : overview
+
+  return {
+    overview: transformedOverview,
+    topSongs,
+    topPlaylists,
+    topCollections,
+    markets,
+    history,
+    isLoading,
+    error,
   }
 }
 

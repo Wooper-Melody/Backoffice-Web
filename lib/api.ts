@@ -36,6 +36,16 @@ import type {
   CollectionDetailAdminResponse
 } from "@/types/catalog"
 
+import type {
+  ArtistOverviewResponse,
+  TopSongsResponse,
+  TopPlaylistsResponse,
+  TopCollectionsResponse,
+  ArtistMarketDistributionResponse,
+  ContentTrendsResponse,
+  ArtistMetricsFilters
+} from "@/types/artist-metrics"
+
 // Configure API base URLs based on environment
 function getApiBaseUrls() {
   const env = process.env.NODE_ENV || 'production'
@@ -488,6 +498,61 @@ class ApiClient {
 
   async getActiveUsersMetrics(period: MetricPeriod): Promise<ActiveUsersMetrics> {
     return this.request(`/users/admin/metrics/active-users?period=${period}`)
+  }
+
+  // Artist Metrics API
+  async getArtistOverview(artistId: string, filters: ArtistMetricsFilters): Promise<ArtistOverviewResponse> {
+    const params = new URLSearchParams({
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+    })
+    if (filters.region) params.set("region", filters.region)
+    return this.request(`/metrics/artists/${artistId}/overview?${params}`)
+  }
+
+  async getArtistTopSongs(artistId: string, filters: ArtistMetricsFilters): Promise<TopSongsResponse> {
+    const params = new URLSearchParams({
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+    })
+    if (filters.region) params.set("region", filters.region)
+    return this.request(`/metrics/artists/${artistId}/top-songs?${params}`)
+  }
+
+  async getArtistTopPlaylists(artistId: string, filters: ArtistMetricsFilters): Promise<TopPlaylistsResponse> {
+    const params = new URLSearchParams({
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+    })
+    if (filters.region) params.set("region", filters.region)
+    return this.request(`/metrics/artists/${artistId}/top-playlists?${params}`)
+  }
+
+  async getArtistTopCollections(artistId: string, filters: ArtistMetricsFilters): Promise<TopCollectionsResponse> {
+    const params = new URLSearchParams({
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+    })
+    if (filters.region) params.set("region", filters.region)
+    return this.request(`/metrics/artists/${artistId}/top-collections?${params}`)
+  }
+
+  async getArtistMarkets(artistId: string, filters: ArtistMetricsFilters, topN = 10): Promise<ArtistMarketDistributionResponse> {
+    const params = new URLSearchParams({
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+      topN: topN.toString(),
+    })
+    return this.request(`/metrics/artists/${artistId}/markets?${params}`)
+  }
+
+  async getArtistHistory(artistId: string, filters: ArtistMetricsFilters): Promise<ContentTrendsResponse> {
+    const params = new URLSearchParams({
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+    })
+    if (filters.region) params.set("region", filters.region)
+    return this.request(`/metrics/artists/${artistId}/history?${params}`)
   }
 }
 
