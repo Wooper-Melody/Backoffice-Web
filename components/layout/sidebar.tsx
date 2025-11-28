@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Music, BarChart3, Settings, Eye, Shield, ChevronLeft, ChevronRight, Users } from "lucide-react"
+import { Music, BarChart3, Eye, ChevronLeft, ChevronRight, Users } from "lucide-react"
 
 const navigation = [
   {
@@ -20,37 +20,16 @@ const navigation = [
       { name: "Content Metrics", href: "/metrics/content" },
     ],
   },
-  /*
-  {
-    name: "Availability",
-    href: "/availability",
-    icon: Shield,
-    children: [
-      { name: "Regional Configuration", href: "/availability/regions" },
-      { name: "Time Windows", href: "/availability/scheduling" },
-      { name: "Blocks", href: "/availability/blocks" },
-    ],
-  },
-  */
   {
     name: "Catalog",
     href: "/catalog",
     icon: Music,
-    children: [
-      { name: "Browse Content", href: "/catalog" },
-      { name: "State Management", href: "/catalog/states" },
-    ],
   },
   {
     name: "Users",
     href: "/users",
     icon: Users,
   },
-  {
-    name: "Audit",
-    href: "/audit",
-    icon: Eye,
-  }
 ]
 
 interface SidebarProps {
