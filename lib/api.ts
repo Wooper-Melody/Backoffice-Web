@@ -3,6 +3,7 @@
 // Types for User Management API
 import type {
   UserAdminResponse,
+  UserProfileResponse,
   CreateUserRequest,
   UpdateUserRequest,
   Page,
@@ -441,6 +442,10 @@ class ApiClient {
 
   async getUserById(userId: string): Promise<UserAdminResponse> {
     return this.request(`/users/admin/${userId}`)
+  }
+
+  async getUserProfile(userId: string): Promise<UserProfileResponse> {
+    return this.request(`/users/${userId}`)
   }
 
   async createUser(userData: CreateUserRequest): Promise<UserAdminResponse> {

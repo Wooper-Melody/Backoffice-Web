@@ -88,6 +88,16 @@ export function useArtistDetailedMetrics(
   const filters = { startDate, endDate, region }
   const shouldFetch = !!artistId && !!startDate && !!endDate
 
+  // Get user profile to obtain artistName
+  const { data: userProfile, error: userProfileError, isLoading: userProfileLoading } = useSWR(
+    shouldFetch ? ["user-profile", artistId] : null,
+    () => api.getUserProfile(artistId!),
+    {
+      refreshInterval: 60000,
+      revalidateOnFocus: false,
+    }
+  )
+
   // Artist Overview
   const { data: overview, error: overviewError, isLoading: overviewLoading } = useSWR(
     shouldFetch ? ["artist-overview", artistId, startDate, endDate, region] : null,
@@ -148,15 +158,16 @@ export function useArtistDetailedMetrics(
     }
   )
 
-  const isLoading = overviewLoading || topSongsLoading || topPlaylistsLoading || 
+  const isLoading = userProfileLoading || overviewLoading || topSongsLoading || topPlaylistsLoading || 
                     topCollectionsLoading || marketsLoading || historyLoading
 
-  const error = overviewError || topSongsError || topPlaylistsError || 
+  const error = userProfileError || overviewError || topSongsError || topPlaylistsError || 
                 topCollectionsError || marketsError || historyError
 
-  // Transform avatar URL if overview exists
+  // Transform avatar URL and artistName if overview exists
   const transformedOverview = overview ? {
     ...overview,
+    artistName: userProfile?.artistProfile?.artistName || overview.artistName,
     avatarUrl: getFirebaseStorageUrl(overview.avatarUrl) || overview.avatarUrl
   } : overview
 
