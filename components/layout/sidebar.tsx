@@ -11,12 +11,10 @@ import { Music, BarChart3, Eye, ChevronLeft, ChevronRight, Users } from "lucide-
 const navigation = [
   {
     name: "Metrics",
-    href: "/metrics",
+    href: "/metrics/users",
     icon: BarChart3,
     children: [
-      { name: "General Dashboard", href: "/metrics" },
       { name: "User Metrics", href: "/metrics/users" },
-      { name: "Artist Metrics", href: "/metrics/artists" },
       { name: "Content Metrics", href: "/metrics/content" },
     ],
   },
