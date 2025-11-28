@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -27,7 +27,10 @@ import {
   ChevronsRight,
 } from "lucide-react"
 import { useCatalog } from "@/hooks/use-catalog"
+import { useCollectionMetrics } from "@/hooks/use-content-metrics"
+import { CollectionMetricsOverview } from "@/components/metrics/collection-metrics-overview"
 import { RegionAvailabilityModal } from "@/components/modals/region-availability-modal"
+import type { DateRange } from "react-day-picker"
 import { BlockContentModal } from "@/components/modals/block-content-modal"
 import { UnblockContentModal } from "@/components/modals/unblock-content-modal"
 import type { 
@@ -75,6 +78,11 @@ export default function CollectionDetailPage() {
   const [auditData, setAuditData] = useState<AuditResponse | null>(null)
   const [auditPage, setAuditPage] = useState(0)
   const [auditPageSize] = useState(10)
+
+  // Metrics state
+  const [metricsPeriod, setMetricsPeriod] = useState<"day" | "week" | "month" | "custom">("month")
+  const [metricsDateRange, setMetricsDateRange] = useState<DateRange | undefined>()
+  const [metricsRegion, setMetricsRegion] = useState<string | undefined>()
   const [loadingAudit, setLoadingAudit] = useState(false)
   const [loadingAvailability, setLoadingAvailability] = useState(false)
   const [regionAvailabilityOpen, setRegionAvailabilityOpen] = useState(false)
@@ -89,6 +97,60 @@ export default function CollectionDetailPage() {
     blockContent,
     unblockContent
   } = useCatalog()
+
+  // Calculate date range for metrics based on selected period
+  const metricsFilters = useMemo(() => {
+    if (metricsPeriod === "custom" && metricsDateRange?.from && metricsDateRange?.to) {
+      return {
+        startDate: metricsDateRange.from.toISOString().split('T')[0],
+        endDate: metricsDateRange.to.toISOString().split('T')[0],
+        region: metricsRegion as Region | undefined
+      }
+    }
+
+    const endDate = new Date()
+    const startDate = new Date()
+    
+    switch (metricsPeriod) {
+      case "day":
+        startDate.setDate(startDate.getDate() - 1)
+        break
+      case "week":
+        startDate.setDate(startDate.getDate() - 7)
+        break
+      case "month":
+        startDate.setDate(startDate.getDate() - 30)
+        break
+    }
+    
+    return {
+      startDate: startDate.toISOString().split('T')[0],
+      endDate: endDate.toISOString().split('T')[0],
+      region: metricsRegion as Region | undefined
+    }
+  }, [metricsPeriod, metricsDateRange, metricsRegion])
+
+  // Fetch collection metrics
+  const { 
+    data: metricsData, 
+    isLoading: metricsLoading 
+  } = useCollectionMetrics(collectionId, metricsFilters)
+
+  const handlePeriodChange = (period: "day" | "week" | "month" | "custom") => {
+    setMetricsPeriod(period)
+    // If not custom, clear custom date range
+    if (period !== "custom") {
+      setMetricsDateRange(undefined)
+    }
+  }
+
+  const handleDateRangeChange = (range: DateRange | undefined) => {
+    setMetricsDateRange(range)
+  }
+
+  const handleRegionChange = (region: string | undefined) => {
+    setMetricsRegion(region)
+  }
 
   useEffect(() => {
     if (collectionId) {
@@ -396,6 +458,18 @@ export default function CollectionDetailPage() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Collection Metrics Overview */}
+          <CollectionMetricsOverview 
+            metrics={metricsData} 
+            isLoading={metricsLoading}
+            onPeriodChange={handlePeriodChange}
+            onDateRangeChange={handleDateRangeChange}
+            onRegionChange={handleRegionChange}
+            currentPeriod={metricsPeriod}
+            currentDateRange={metricsDateRange}
+            currentRegion={metricsRegion}
+          />
         </TabsContent>
 
         {/* Availability Tab */}

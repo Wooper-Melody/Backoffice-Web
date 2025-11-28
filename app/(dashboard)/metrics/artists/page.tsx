@@ -211,7 +211,7 @@ function ArtistMetricsContent() {
               <SelectItem value="day">Last Day</SelectItem>
               <SelectItem value="week">Last Week</SelectItem>
               <SelectItem value="month">Last Month</SelectItem>
-              <SelectItem value="custom">Custom</SelectItem>
+              <SelectItem value="custom">Custom Range</SelectItem>
             </SelectContent>
           </Select>
           {periodType === "custom" && (
