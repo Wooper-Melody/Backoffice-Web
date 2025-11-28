@@ -34,7 +34,18 @@ import type {
   AvailabilityDetailResponse,
   AuditResponse,
   SongDetailAdminResponse,
-  CollectionDetailAdminResponse
+  CollectionDetailAdminResponse,
+  SongOverviewResponse,
+  CollectionOverviewResponse,
+  PlaylistOverviewResponse,
+  ContentTrendsResponse,
+  TopSongsResponse,
+  TopPlaylistsResponse,
+  TopCollectionsResponse,
+  TopArtistsContentResponse,
+  ContentSummaryResponse,
+  ContentStateManagementResponse,
+  ContentRatesResponse
 } from "@/types/catalog"
 
 import type {
@@ -558,6 +569,149 @@ class ApiClient {
     })
     if (filters.region) params.set("region", filters.region)
     return this.request(`/metrics/artists/${artistId}/history?${params}`)
+  }
+
+  // Content Metrics API
+  async getSongOverview(
+    songId: string, 
+    startDate: string, 
+    endDate: string, 
+    region?: string
+  ): Promise<SongOverviewResponse> {
+    const params = new URLSearchParams({
+      startDate,
+      endDate,
+    })
+    if (region) params.set("region", region)
+    return this.request(`/metrics/songs/${songId}/overview?${params}`)
+  }
+
+  async getCollectionOverview(
+    collectionId: string, 
+    startDate: string, 
+    endDate: string, 
+    region?: string
+  ): Promise<CollectionOverviewResponse> {
+    const params = new URLSearchParams({
+      startDate,
+      endDate,
+    })
+    if (region) params.set("region", region)
+    return this.request(`/metrics/collections/${collectionId}/overview?${params}`)
+  }
+
+  async getPlaylistOverview(
+    playlistId: string, 
+    startDate: string, 
+    endDate: string, 
+    region?: string
+  ): Promise<PlaylistOverviewResponse> {
+    const params = new URLSearchParams({
+      startDate,
+      endDate,
+    })
+    if (region) params.set("region", region)
+    return this.request(`/metrics/playlists/${playlistId}/overview?${params}`)
+  }
+
+  // Content Metrics Dashboard APIs
+  async getContentTrends(
+    startDate: string,
+    endDate: string,
+    region?: string
+  ): Promise<ContentTrendsResponse> {
+    const params = new URLSearchParams({
+      startDate,
+      endDate,
+    })
+    if (region) params.set("region", region)
+    return this.request(`/metrics/content/trends?${params}`)
+  }
+
+  async getTopSongsMetrics(
+    startDate: string,
+    endDate: string,
+    region?: string
+  ): Promise<TopSongsResponse> {
+    const params = new URLSearchParams({
+      startDate,
+      endDate,
+    })
+    if (region) params.set("region", region)
+    return this.request(`/metrics/content/top-songs?${params}`)
+  }
+
+  async getTopPlaylistsMetrics(
+    startDate: string,
+    endDate: string,
+    region?: string
+  ): Promise<TopPlaylistsResponse> {
+    const params = new URLSearchParams({
+      startDate,
+      endDate,
+    })
+    if (region) params.set("region", region)
+    return this.request(`/metrics/content/top-playlists?${params}`)
+  }
+
+  async getTopCollectionsMetrics(
+    startDate: string,
+    endDate: string,
+    region?: string
+  ): Promise<TopCollectionsResponse> {
+    const params = new URLSearchParams({
+      startDate,
+      endDate,
+    })
+    if (region) params.set("region", region)
+    return this.request(`/metrics/content/top-collections?${params}`)
+  }
+
+  async getTopArtistsContent(
+    startDate: string,
+    endDate: string,
+    region?: string
+  ): Promise<TopArtistsContentResponse> {
+    const params = new URLSearchParams({
+      startDate,
+      endDate,
+    })
+    if (region) params.set("region", region)
+    return this.request(`/metrics/content/top-artists?${params}`)
+  }
+
+  async getContentSummary(
+    startDate: string,
+    endDate: string,
+    region?: string
+  ): Promise<ContentSummaryResponse> {
+    const params = new URLSearchParams({
+      startDate,
+      endDate,
+    })
+    if (region) params.set("region", region)
+    return this.request(`/metrics/content/summary?${params}`)
+  }
+
+  async getContentStateManagement(
+    region?: string
+  ): Promise<ContentStateManagementResponse> {
+    const params = new URLSearchParams()
+    if (region) params.set("region", region)
+    return this.request(`/metrics/content/state-management${params.toString() ? `?${params}` : ""}`)
+  }
+
+  async getContentRates(
+    startDate: string,
+    endDate: string,
+    region?: string
+  ): Promise<ContentRatesResponse> {
+    const params = new URLSearchParams({
+      startDate,
+      endDate,
+    })
+    if (region) params.set("region", region)
+    return this.request(`/metrics/content/rates?${params}`)
   }
 }
 

@@ -268,3 +268,177 @@ export interface CollectionDetailAdminResponse {
   releaseDate?: string
   scheduledAt?: string
 }
+
+// ============================================================
+// CONTENT METRICS TYPES
+// ============================================================
+
+export interface DateRange {
+  start: string  // ISO 8601 format (YYYY-MM-DD)
+  end: string    // ISO 8601 format (YYYY-MM-DD)
+}
+
+export interface DateRangeComparison {
+  current: DateRange
+  previous: DateRange
+}
+
+export interface MetricValue {
+  current: number
+  previous: number
+  changePercent: number
+}
+
+export interface SongOverviewResponse {
+  songId: string
+  title: string
+  artist: string
+  artistId: string
+  totalPlays: number
+  totalLikes: number
+  periodPlays: MetricValue
+  periodLikes: MetricValue
+  dateRange: DateRangeComparison
+  region?: string
+}
+
+export interface CollectionOverviewResponse {
+  collectionId: string
+  title: string
+  curator: string
+  artistId: string
+  totalPlays: number
+  totalSaves: number
+  periodPlays: MetricValue
+  periodSaves: MetricValue
+  dateRange: DateRangeComparison
+  region?: string
+}
+
+export interface PlaylistOverviewResponse {
+  playlistId: string
+  title: string
+  curator: string
+  totalPlays: number
+  totalSaves: number
+  periodPlays: MetricValue
+  periodSaves: MetricValue
+  dateRange: DateRangeComparison
+  region?: string
+}
+
+// Content Metrics Dashboard Types
+export interface TrendDataPoint {
+  date: string
+  totalPlays: number
+}
+
+export interface ContentTrendsResponse {
+  songs: TrendDataPoint[]
+  collections: TrendDataPoint[]
+  playlists: TrendDataPoint[]
+  dateRange: DateRange
+}
+
+export interface TopSong {
+  rank: number
+  songId: string
+  title: string
+  artist: string
+  plays: number
+  likes: number
+}
+
+export interface TopSongsResponse {
+  topSongs: TopSong[]
+  dateRange: DateRange
+}
+
+export interface TopPlaylist {
+  rank: number
+  playlistId: string
+  title: string
+  curator: string
+  ownerId: string
+  plays: number
+  saves: number
+}
+
+export interface TopPlaylistsResponse {
+  topPlaylists: TopPlaylist[]
+  dateRange: DateRange
+}
+
+export interface TopCollection {
+  rank: number
+  collectionId: string
+  title: string
+  artistName: string
+  artistId: string
+  plays: number
+  saves: number
+}
+
+export interface TopCollectionsResponse {
+  topCollections: TopCollection[]
+  dateRange: DateRange
+}
+
+export interface TopArtist {
+  rank: number
+  artistId: string
+  artistName: string
+  plays: number
+  likes: number
+}
+
+export interface TopArtistsContentResponse {
+  topArtists: TopArtist[]
+  dateRange: DateRange
+}
+
+export interface ContentSummaryResponse {
+  songsReleased: MetricValue
+  albumsReleased: MetricValue
+  totalPlays: MetricValue
+  totalLikes: MetricValue
+  totalSaves: MetricValue
+  dateRange: DateRangeComparison
+}
+
+export interface SongsStateDistribution {
+  published: number
+  scheduled: number
+  regionUnavailable: number
+  adminBlocked: number
+  total: number
+}
+
+export interface CollectionsStateDistribution {
+  published: number
+  scheduled: number
+  regionUnavailable: number
+  adminBlocked: number
+  total: number
+}
+
+export interface ContentStateManagementResponse {
+  songs: SongsStateDistribution
+  collections: CollectionsStateDistribution
+  region?: string
+}
+
+export interface RateMetric {
+  description: string
+  current: number
+  previous: number
+  changePercent: number
+}
+
+export interface ContentRatesResponse {
+  averagePlaysPerSong: MetricValue
+  likeRate: RateMetric
+  saveRatePlaylists: RateMetric
+  saveRateCollections: RateMetric
+  dateRange: DateRangeComparison
+}
