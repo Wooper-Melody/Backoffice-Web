@@ -13,6 +13,7 @@ import {
   Legend,
 } from "recharts"
 import { Users, UserPlus, UserCheck, UserX, Download, TrendingUp, TrendingDown, Loader2 } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useAdminUserMetrics } from "@/hooks/use-metrics"
 import type { MetricPeriod } from "@/types/users"
 import { MetricDetailModal } from "@/components/modals/metric-detail-modal"
@@ -260,14 +261,62 @@ export default function UserMetricsPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <div className="space-y-6">
+          {/* Stats Cards Loading */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i}>
+                <CardHeader>
+                  <Skeleton className="h-4 w-32" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-8 w-24 mb-2" />
+                  <Skeleton className="h-4 w-40" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          {/* Charts Loading */}
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-4 w-64 mt-2" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-[300px] w-full" />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-4 w-64 mt-2" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-[300px] w-full" />
+              </CardContent>
+            </Card>
+          </div>
+          {/* Recent Signups Loading */}
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-4 w-64 mt-2" />
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-3">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-24 w-full" />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       ) : (
         <>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card
-              className="cursor-pointer hover:shadow-lg transition-shadow"
+              className="cursor-pointer hover:shadow-lg hover:border-primary transition-all"
               onClick={() => totalUsers && handleCardClick("total-users", totalUsers)}
             >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -283,7 +332,7 @@ export default function UserMetricsPage() {
             </Card>
 
             <Card
-              className="cursor-pointer hover:shadow-lg transition-shadow"
+              className="cursor-pointer hover:shadow-lg hover:border-primary transition-all"
               onClick={() => newSignUps && handleCardClick("new-signups", newSignUps)}
             >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -299,7 +348,7 @@ export default function UserMetricsPage() {
             </Card>
 
             <Card
-              className="cursor-pointer hover:shadow-lg transition-shadow"
+              className="cursor-pointer hover:shadow-lg hover:border-primary transition-all"
               onClick={() => activeUsers && handleCardClick("active-users", activeUsers)}
             >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -315,7 +364,7 @@ export default function UserMetricsPage() {
             </Card>
 
             <Card
-              className="cursor-pointer hover:shadow-lg transition-shadow"
+              className="cursor-pointer hover:shadow-lg hover:border-primary transition-all"
               onClick={() => blockedUsers && handleCardClick("blocked-users", blockedUsers)}
             >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -385,7 +434,7 @@ export default function UserMetricsPage() {
 
             {/* Role Distribution */}
             <Card
-              className="cursor-pointer hover:shadow-lg transition-shadow"
+              className="cursor-pointer hover:shadow-lg  hover:border-primary transition-all"
               onClick={() => roleDistribution && handleCardClick("role-distribution", roleDistribution)}
             >
               <CardHeader>
@@ -502,7 +551,7 @@ export default function UserMetricsPage() {
           </div>
 
           <Card
-            className="cursor-pointer hover:shadow-lg transition-shadow"
+            className="cursor-pointer hover:shadow-lg  hover:border-primary transition-all"
             onClick={() => recentSignUps && handleCardClick("recent-signups", recentSignUps)}
           >
             <CardHeader>
