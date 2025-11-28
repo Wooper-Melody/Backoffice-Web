@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts"
@@ -108,6 +109,13 @@ const topAlbums = [
 export default function ContentMetricsPage() {
   const [timeRange, setTimeRange] = useState("30d")
   const [contentType, setContentType] = useState("all")
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    // Simulate data loading
+    const timer = setTimeout(() => setLoading(false), 800)
+    return () => clearTimeout(timer)
+  }, [])
 
   return (
     <div className="p-6 space-y-6">
@@ -146,6 +154,67 @@ export default function ContentMetricsPage() {
         </div>
       </div>
 
+      {loading ? (
+        <div className="space-y-6">
+          {/* Stats Cards Loading */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i}>
+                <CardHeader>
+                  <Skeleton className="h-4 w-32" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-8 w-24 mb-2" />
+                  <Skeleton className="h-4 w-40" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          {/* Chart Loading */}
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-4 w-64 mt-2" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-[300px] w-full" />
+            </CardContent>
+          </Card>
+          {/* Top Items Loading */}
+          <div className="grid gap-6 md:grid-cols-2">
+            {[1, 2].map((i) => (
+              <Card key={i}>
+                <CardHeader>
+                  <Skeleton className="h-6 w-32" />
+                  <Skeleton className="h-4 w-48 mt-2" />
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {[1, 2, 3].map((j) => (
+                      <Skeleton key={j} className="h-20 w-full" />
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          {/* Analysis Loading */}
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-4 w-64 mt-2" />
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-3">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-24 w-full" />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        <>
       {/* Content Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {contentStats.map((stat) => (
@@ -294,6 +363,8 @@ export default function ContentMetricsPage() {
           </div>
         </CardContent>
       </Card>
+      </>
+      )}
     </div>
   )
 }
