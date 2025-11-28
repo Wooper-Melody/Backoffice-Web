@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -374,6 +375,52 @@ export default function UsersPage() {
         </div>
       </div>
 
+      {loading ? (
+        <div className="space-y-6">
+          {/* Stats Cards Loading */}
+          <div className="grid gap-4 md:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i}>
+                <CardHeader>
+                  <Skeleton className="h-4 w-32" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-8 w-24 mb-2" />
+                  <Skeleton className="h-3 w-16" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          {/* Filters Loading */}
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-48" />
+            </CardHeader>
+            <CardContent>
+              <div className="flex space-x-4">
+                <Skeleton className="h-10 flex-1" />
+                <Skeleton className="h-10 w-40" />
+                <Skeleton className="h-10 w-40" />
+                <Skeleton className="h-10 w-24" />
+              </div>
+            </CardContent>
+          </Card>
+          {/* Table Loading */}
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-32" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Skeleton key={i} className="h-16 w-full" />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        <>
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card 
@@ -707,6 +754,12 @@ export default function UsersPage() {
                             <Edit className="mr-2 h-4 w-4" />
                             Edit User
                           </DropdownMenuItem>
+                          {user.role === 'ARTIST' && (
+                            <DropdownMenuItem onClick={() => window.location.href = `/metrics/artists?id=${user.id}`}>
+                              <TrendingUp className="mr-2 h-4 w-4" />
+                              View Metrics
+                            </DropdownMenuItem>
+                          )}
                           {!isCurrentUser(user) && (
                             <>
                               <DropdownMenuSeparator />
@@ -790,6 +843,8 @@ export default function UsersPage() {
           </PaginationContent>
         </Pagination>
       </div>
+      </>
+      )}
 
       <CreateUserModal
         open={createUserOpen}
