@@ -246,7 +246,7 @@ export default function UserGlobe({ height = 600, rotationSpeed = 0.4, cameraDis
       function animate(now = performance.now()) {
         const dt = (now - last) / 1000
         last = now
-        if (globe && autoRotate) {
+        if (globe && autoRotate && !(globe as any)._autoRotatePaused) {
           const rot = (rotationSpeed * Math.PI) / 180 * dt
           // preserve user's latitude (tilt) while auto-rotating longitude
           const pov = globe.pointOfView() || { lat: 0, lng: 0 }

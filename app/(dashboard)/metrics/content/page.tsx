@@ -153,31 +153,14 @@ export default function ContentMetricsPage() {
     return "text-muted-foreground"
   }
 
-  // Prepare trend chart data
+  // Prepare trend chart data - Only songs
   const trendChartData = useMemo(() => {
-    if (!trendsData) return []
+    if (!trendsData || !trendsData.songs) return []
     
-    const dateMap = new Map<string, { date: string; songs: number; collections: number; playlists: number }>()
-    
-    trendsData.songs.forEach(point => {
-      const existing = dateMap.get(point.date) || { date: point.date, songs: 0, collections: 0, playlists: 0 }
-      existing.songs = point.totalPlays
-      dateMap.set(point.date, existing)
-    })
-    
-    trendsData.collections.forEach(point => {
-      const existing = dateMap.get(point.date) || { date: point.date, songs: 0, collections: 0, playlists: 0 }
-      existing.collections = point.totalPlays
-      dateMap.set(point.date, existing)
-    })
-    
-    trendsData.playlists.forEach(point => {
-      const existing = dateMap.get(point.date) || { date: point.date, songs: 0, collections: 0, playlists: 0 }
-      existing.playlists = point.totalPlays
-      dateMap.set(point.date, existing)
-    })
-    
-    return Array.from(dateMap.values()).sort((a, b) => a.date.localeCompare(b.date))
+    return trendsData.songs.map(point => ({
+      date: point.date,
+      songs: point.totalPlays
+    })).sort((a, b) => a.date.localeCompare(b.date))
   }, [trendsData])
 
   return (
@@ -369,16 +352,14 @@ export default function ContentMetricsPage() {
           {trendsData && trendChartData.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Performance Trends</CardTitle>
-                <CardDescription>Daily plays by content type</CardDescription>
+                <CardTitle>Songs Performance Trends</CardTitle>
+                <CardDescription>Daily plays for songs</CardDescription>
               </CardHeader>
               <CardContent>
                 <MetricsChart
                   data={trendChartData}
                   lines={[
-                    { dataKey: "songs", name: "Songs", color: "#8884d8" },
-                    { dataKey: "collections", name: "Collections", color: "#82ca9d" },
-                    { dataKey: "playlists", name: "Playlists", color: "#ffc658" }
+                    { dataKey: "songs", name: "Songs", color: "#8884d8" }
                   ]}
                   xAxisKey="date"
                   height={300}
@@ -526,7 +507,7 @@ export default function ContentMetricsPage() {
                       <div
                         key={artist.artistId}
                         className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent cursor-pointer transition-colors"
-                        onClick={() => router.push(`/metrics/artists?artistId=${artist.artistId}`)}
+                        onClick={() => router.push(`/metrics/artists?id=${artist.artistId}`)}
                       >
                         <div className="flex items-center space-x-3">
                           <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground font-bold">

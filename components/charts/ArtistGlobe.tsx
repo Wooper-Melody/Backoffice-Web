@@ -84,7 +84,7 @@ function linearScale(domain: [number, number], range: [number, number]) {
  */
 export default function ArtistGlobe({
   height = 500,
-  rotationSpeed = 0.5,
+  rotationSpeed = 0.4,
   cameraDistance = 260,
   colors = {},
   autoRotate = true,

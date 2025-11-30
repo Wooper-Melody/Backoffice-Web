@@ -68,7 +68,7 @@ export function ArtistHistoryDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[70vw] max-w-[95vw] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[35vw] max-w-[50vw] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Play History Details {artistName && `- ${artistName}`}</DialogTitle>
           <DialogDescription>
@@ -78,70 +78,17 @@ export function ArtistHistoryDetailModal({
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Summary Stats */}
-          <div className="grid gap-4 md:grid-cols-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Plays</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{formatNumber(grandTotal)}</div>
-                <p className="text-xs text-muted-foreground">Across all content types</p>
-              </CardContent>
-            </Card>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Songs</CardTitle>
-                <Music className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{formatNumber(totalSongs)}</div>
-                <p className="text-xs text-muted-foreground">
-                  {((totalSongs / grandTotal) * 100).toFixed(1)}% of total
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Collections</CardTitle>
-                <Folder className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{formatNumber(totalCollections)}</div>
-                <p className="text-xs text-muted-foreground">
-                  {((totalCollections / grandTotal) * 100).toFixed(1)}% of total
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Playlists</CardTitle>
-                <ListMusic className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{formatNumber(totalPlaylists)}</div>
-                <p className="text-xs text-muted-foreground">
-                  {((totalPlaylists / grandTotal) * 100).toFixed(1)}% of total
-                </p>
-              </CardContent>
-            </Card>
-          </div>
 
           {/* Tabs with detailed data */}
           <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="songs">Songs</TabsTrigger>
-              <TabsTrigger value="collections">Collections</TabsTrigger>
-              <TabsTrigger value="playlists">Playlists</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 md:grid-cols-1 ">
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-base flex items-center gap-2">
@@ -156,20 +103,8 @@ export function ArtistHistoryDetailModal({
                         <span className="font-semibold">{new Date(peakDay.date).toLocaleDateString()}</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Total Plays:</span>
-                        <span className="font-semibold">{formatNumber(peakDay.total)}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">Songs:</span>
                         <span>{formatNumber(peakDay.songs)}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Collections:</span>
-                        <span>{formatNumber(peakDay.collections)}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Playlists:</span>
-                        <span>{formatNumber(peakDay.playlists)}</span>
                       </div>
                     </div>
                   </CardContent>
@@ -189,42 +124,8 @@ export function ArtistHistoryDetailModal({
                         <span className="font-semibold">{new Date(lowestDay.date).toLocaleDateString()}</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Total Plays:</span>
-                        <span className="font-semibold">{formatNumber(lowestDay.total)}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">Songs:</span>
                         <span>{formatNumber(lowestDay.songs)}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Collections:</span>
-                        <span>{formatNumber(lowestDay.collections)}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Playlists:</span>
-                        <span>{formatNumber(lowestDay.playlists)}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Daily Averages</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Songs:</span>
-                        <span className="font-semibold">{formatNumber(Math.round(avgSongs))}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Collections:</span>
-                        <span className="font-semibold">{formatNumber(Math.round(avgCollections))}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Playlists:</span>
-                        <span className="font-semibold">{formatNumber(Math.round(avgPlaylists))}</span>
                       </div>
                     </div>
                   </CardContent>
@@ -252,14 +153,12 @@ export function ArtistHistoryDetailModal({
 
             {[
               { key: 'songs', data: data.songs, icon: Music, color: '#8884d8' },
-              { key: 'collections', data: data.collections, icon: Folder, color: '#82ca9d' },
-              { key: 'playlists', data: data.playlists, icon: ListMusic, color: '#ffc658' }
             ].map(({ key, data: itemData, icon: Icon, color }) => (
               <TabsContent key={key} value={key}>
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Icon className="h-5 w-5" style={{ color }} />
+                      <Icon className="h-5 w-5" style={{ color: "white" }} />
                       {key.charAt(0).toUpperCase() + key.slice(1)} Daily Data
                     </CardTitle>
                   </CardHeader>

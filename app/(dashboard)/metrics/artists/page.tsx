@@ -506,7 +506,7 @@ function ArtistMetricsContent() {
                       percentageOfTotal: m.percentageOfTotal ?? 0
                     }))}
                     height={500}
-                    rotationSpeed={0.5}
+                    rotationSpeed={3}
                     cameraDistance={260}
                     autoRotate={true}
                   />
@@ -515,33 +515,19 @@ function ArtistMetricsContent() {
             )}
 
             {/* Play History Chart */}
-            {history && (history.songs?.length > 0 || history.collections?.length > 0 || history.playlists?.length > 0) && (() => {
-              const allDates = new Set<string>()
-              history.songs?.forEach(d => allDates.add(d.date))
-              history.collections?.forEach(d => allDates.add(d.date))
-              history.playlists?.forEach(d => allDates.add(d.date))
-              
-              const combinedData = Array.from(allDates).sort().map(date => {
-                const songs = history.songs?.find(d => d.date === date)?.totalPlays || 0
-                const collections = history.collections?.find(d => d.date === date)?.totalPlays || 0
-                const playlists = history.playlists?.find(d => d.date === date)?.totalPlays || 0
-                
-                return {
-                  date,
-                  songs,
-                  collections,
-                  playlists,
-                  total: songs + collections + playlists
-                }
-              })
+            {history && history.songs?.length > 0 && (() => {
+              const songsData = history.songs.map(d => ({
+                date: d.date,
+                songs: d.totalPlays
+              })).sort((a, b) => a.date.localeCompare(b.date))
 
-              const totalPlays = combinedData.reduce((acc, d) => acc + d.total, 0)
-              const avgDailyPlays = Math.round(totalPlays / combinedData.length)
-              const peakDay = combinedData.reduce((max, item) => item.total > max.total ? item : max, combinedData[0])
+              const totalPlays = songsData.reduce((acc, d) => acc + d.songs, 0)
+              const avgDailyPlays = Math.round(totalPlays / songsData.length)
+              const peakDay = songsData.reduce((max, item) => item.songs > max.songs ? item : max, songsData[0])
               
-              const midPoint = Math.floor(combinedData.length / 2)
-              const firstHalf = combinedData.slice(0, midPoint).reduce((acc, d) => acc + d.total, 0) / midPoint
-              const secondHalf = combinedData.slice(midPoint).reduce((acc, d) => acc + d.total, 0) / (combinedData.length - midPoint)
+              const midPoint = Math.floor(songsData.length / 2)
+              const firstHalf = songsData.slice(0, midPoint).reduce((acc, d) => acc + d.songs, 0) / midPoint
+              const secondHalf = songsData.slice(midPoint).reduce((acc, d) => acc + d.songs, 0) / (songsData.length - midPoint)
               const trendPercentage = ((secondHalf - firstHalf) / firstHalf * 100).toFixed(1)
               const isPositiveTrend = parseFloat(trendPercentage) >= 0
               
@@ -551,8 +537,8 @@ function ArtistMetricsContent() {
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <div>
-                          <CardTitle>Play History</CardTitle>
-                          <CardDescription>Daily plays trend for songs, collections, and playlists</CardDescription>
+                          <CardTitle>Songs Play History</CardTitle>
+                          <CardDescription>Daily plays trend for songs</CardDescription>
                         </div>
                         <Button
                           variant="outline"
@@ -565,7 +551,7 @@ function ArtistMetricsContent() {
                     </CardHeader>
                     <CardContent>
                       <ResponsiveContainer width="100%" height={525}>
-                      <LineChart data={combinedData}>
+                      <LineChart data={songsData}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis 
                         dataKey="date" 
@@ -601,33 +587,6 @@ function ArtistMetricsContent() {
                           dataKey="songs" 
                           name="Songs"
                           stroke="#8884d8" 
-                          strokeWidth={2}
-                          dot={{ r: 3 }}
-                          activeDot={{ r: 5 }}
-                        />
-                        <Line 
-                          type="monotone" 
-                          dataKey="collections" 
-                          name="Collections"
-                          stroke="#82ca9d" 
-                          strokeWidth={2}
-                          dot={{ r: 3 }}
-                          activeDot={{ r: 5 }}
-                        />
-                        <Line 
-                          type="monotone" 
-                          dataKey="playlists" 
-                          name="Playlists"
-                          stroke="#ffc658" 
-                          strokeWidth={2}
-                          dot={{ r: 3 }}
-                          activeDot={{ r: 5 }}
-                        />
-                        <Line 
-                          type="monotone" 
-                          dataKey="total" 
-                          name="Total"
-                          stroke="#ff7c7c" 
                           strokeWidth={2.5}
                           dot={{ r: 4 }}
                           activeDot={{ r: 6 }}
@@ -635,18 +594,18 @@ function ArtistMetricsContent() {
                       </LineChart>
                     </ResponsiveContainer>
                     
-                    {/* Summary Cards - Same style as globe */}
+                    {/* Summary Cards - Songs only */}
                     <div className="flex gap-4 mt-4">
                       {/* Card 1: Total Plays */}
                       <Card className="flex-1">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                           <CardTitle className="text-sm font-medium">Total plays</CardTitle>
-                          <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                          <Music className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
                           <div>
                             <div className="text-2xl font-semibold">{formatNumber(totalPlays)}</div>
-                            <div className="text-sm text-muted-foreground mt-1">Across all content types</div>
+                            <div className="text-sm text-muted-foreground mt-1">From all songs</div>
                           </div>
                         </CardContent>
                       </Card>
@@ -660,7 +619,7 @@ function ArtistMetricsContent() {
                         <CardContent>
                           <div>
                             <div className="text-2xl font-semibold">{formatNumber(avgDailyPlays)}</div>
-                            <div className="text-sm text-muted-foreground mt-1">Plays per day</div>
+                            <div className="text-sm text-muted-foreground mt-1">Songs plays per day</div>
                           </div>
                         </CardContent>
                       </Card>
@@ -668,7 +627,7 @@ function ArtistMetricsContent() {
                       {/* Card 3: Period Trend */}
                       <Card className="flex-1">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                          <CardTitle className="text-sm font-medium">Period trend</CardTitle>
+                          <CardTitle className="text-sm font-medium">Songs trend</CardTitle>
                           {isPositiveTrend ? (
                             <TrendingUp className="h-4 w-4 text-green-500" />
                           ) : (
